@@ -1,22 +1,61 @@
 # macOS
 .DS_Store
 
-# Ignore all IntelliJ IDEA project files
+# Rider / JetBrains
 .idea/
+.idea/*
 .idea/*.xml
 .idea/*.iml
 .idea/**/*.xml
 .idea/**/*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/shelf/
+.idea/.idea.*
 
-# Rider specific ignored files
+# Rider special project settings
 .idea.dotnet-microservices-ecommerce.iml
 /projectSettingsUpdater.xml
 /modules.xml
 /contentModel.xml
 
-# Editor-based HTTP Client requests
+# Rider HTTP Client
 /httpRequests/
 
-# Datasource local storage ignored files
+# Rider Data Source settings
 /dataSources/
 /dataSources.local.xml
+
+# Resharper (common with Rider)
+_ReSharper*/
+*.DotSettings.user
+
+# .NET build output
+bin/
+obj/
+
+# VSCode settings
+.vscode/
+
+# Test results
+TestResults/
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Nuget packages (legacy)
+packages/
+
+# Logs
+*.log
+logs/
+
+# User / machine settings
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
