@@ -1,10 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{8D0C06F8-73E3-4D7E-926C-D6A54D708AF2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Catalog", "Catalog", "{31657BF3-D141-4AE9-A784-2EF1F1118B1F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalog.API", "Services\Catalog\Catalog.API\Catalog.API.csproj", "{50531623-7C7E-47D0-BDA2-ED1742E21EA1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4A250F86-6A10-4A8C-9FCB-BA78F78254A6}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildingBlocks", "BuildingBlocks", "{0789081E-00E0-404A-BCD6-2AEAE37E53B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingBlocks", "BuildingBlocks\BuildingBlocks\BuildingBlocks.csproj", "{0A7C9678-998D-47AE-A4FA-1A8BBF95A7E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,11 +24,16 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{31657BF3-D141-4AE9-A784-2EF1F1118B1F} = {8D0C06F8-73E3-4D7E-926C-D6A54D708AF2}
 		{50531623-7C7E-47D0-BDA2-ED1742E21EA1} = {31657BF3-D141-4AE9-A784-2EF1F1118B1F}
+		{0A7C9678-998D-47AE-A4FA-1A8BBF95A7E5} = {0789081E-00E0-404A-BCD6-2AEAE37E53B1}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{50531623-7C7E-47D0-BDA2-ED1742E21EA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{50531623-7C7E-47D0-BDA2-ED1742E21EA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{50531623-7C7E-47D0-BDA2-ED1742E21EA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{50531623-7C7E-47D0-BDA2-ED1742E21EA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A7C9678-998D-47AE-A4FA-1A8BBF95A7E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A7C9678-998D-47AE-A4FA-1A8BBF95A7E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A7C9678-998D-47AE-A4FA-1A8BBF95A7E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A7C9678-998D-47AE-A4FA-1A8BBF95A7E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
