@@ -15,20 +15,21 @@ services:
       - postgres_catalog:/var/lib/postgresql
 
   catalog.api:
-    image: catalog.api
     build:
       context: .
       dockerfile: Services/Catalog/Catalog.API/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_HTTPS_PORTS=8081
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/catalog-api.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=catalog_dev_cert_password
+      - ConnectionStrings__Database=Server=catalogdb;Port=5432;Database=CatalogDb;User Id=postgres;Password=postgres;Include Error Detail=true
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "5050:8080"
+      - "6060:8081"
     volumes:
       - ~/.microsoft/usersecrets:/home/app/.microsoft/usersecrets:ro
-      - ~/.aspnet/https:/home/app/.aspnet/https:ro
+      - ~/.aspnet/https:/https:ro
 
 volumes:
   postgres_catalog:

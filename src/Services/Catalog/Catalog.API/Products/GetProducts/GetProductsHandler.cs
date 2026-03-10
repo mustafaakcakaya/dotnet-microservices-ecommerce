@@ -19,5 +19,6 @@ public class GetProductsHandler : ICarterModule
             .Produces(StatusCodes.Status400BadRequest)
             .WithSummary("Get products")
             .WithDescription("Get all products");
+
     }
 }
