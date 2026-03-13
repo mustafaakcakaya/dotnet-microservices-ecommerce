@@ -1,24 +1,16 @@
 namespace Catalog.API.Products.GetProducts;
 
-public record GetProductsResponse(IEnumerable<Product> Products);
+public record GetProductsQuery() : IQuery<GetProductsResult>;
 
-public class GetProductsHandler : ICarterModule
+public record GetProductsResult(IEnumerable<Product> Products);
+
+internal class GetProductsQueryHandler(IDocumentSession session)
+    : IQueryHandler<GetProductsQuery, GetProductsResult>
 {
-    public void AddRoutes(IEndpointRouteBuilder app)
+    public async Task<GetProductsResult> Handle(GetProductsQuery query, CancellationToken cancellationToken)
     {
-        app.MapGet("/products", async (ISender sender) =>
-            {
-                var result = await sender.Send(new GetProductsQuery());
+        var products = await session.Query<Product>().ToListAsync(cancellationToken);
 
-                var response = result.Adapt<GetProductsResponse>();
-
-                return Results.Ok(response);
-            })
-            .WithName("GetProducts")
-            .Produces<GetProductsResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .WithSummary("Get products")
-            .WithDescription("Get all products");
-
+        return new GetProductsResult(products);
     }
 }

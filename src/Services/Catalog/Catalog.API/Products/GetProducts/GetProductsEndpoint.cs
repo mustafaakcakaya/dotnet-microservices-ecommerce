@@ -1,22 +1,24 @@
-using Catalog.API.Models;
-using Marten;
-using MediatR;
-using BuildingBlocks.CQRS;
 namespace Catalog.API.Products.GetProducts;
 
-public record GetProductsQuery() : IQuery<GetProductsResult>;
+public record GetProductsResponse(IEnumerable<Product> Products);
 
-public record GetProductsResult(IEnumerable<Product> Products);
-
-internal class GetProductsQueryHandler(IDocumentSession session, ILogger<GetProductsQueryHandler> logger)
-    : IQueryHandler<GetProductsQuery, GetProductsResult>
+public class GetProductsHandler : ICarterModule
 {
-    public async Task<GetProductsResult> Handle(GetProductsQuery query, CancellationToken cancellationToken)
+    public void AddRoutes(IEndpointRouteBuilder app)
     {
-        logger.LogInformation("GetProductsQueryHandler.Handle called with request: {@Query}", query);
+        app.MapGet("/products", async (ISender sender) =>
+            {
+                var result = await sender.Send(new GetProductsQuery());
 
-        var products = await session.Query<Product>().ToListAsync(cancellationToken);
+                var response = result.Adapt<GetProductsResponse>();
 
-        return new GetProductsResult(products);
+                return Results.Ok(response);
+            })
+            .WithName("GetProducts")
+            .Produces<GetProductsResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .WithSummary("Get products")
+            .WithDescription("Get all products");
+
     }
 }
