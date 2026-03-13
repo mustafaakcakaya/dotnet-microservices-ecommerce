@@ -8,12 +8,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="..\..\..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-      <PackageReference Include="Marten" Version="6.4.1" />
-      <PackageReference Include="MediatR" Version="12.2.0" />
-      <PackageReference Include="Carter" Version="8.0.0" />
+        <Content Include="..\..\..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
+        <PackageReference Include="Marten" Version="6.4.1" />
+        <PackageReference Include="MediatR" Version="12.2.0" />
+        <PackageReference Include="Carter" Version="8.0.0" />
+        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.0" />
+        <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>
