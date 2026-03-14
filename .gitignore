@@ -39,6 +39,9 @@ obj/
 # VSCode settings
 .vscode/
 
+# Visual Studio /.vs (per-user, cache)
+.vs/
+
 # Test results
 TestResults/
 

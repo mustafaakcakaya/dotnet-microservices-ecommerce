@@ -15,6 +15,10 @@ services:
       - postgres_catalog:/var/lib/postgresql
 
   catalog.api:
+    container_name: Catalog.API
+    # Image name is parameterized so we can easily push to different registries.
+    # If DOCKER_REGISTRY is not set, image will simply be "catalogapi".
+    image: ${DOCKER_REGISTRY-}catalogapi
     build:
       context: .
       dockerfile: Services/Catalog/Catalog.API/Dockerfile
@@ -24,12 +28,28 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/catalog-api.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=catalog_dev_cert_password
       - ConnectionStrings__Database=Server=catalogdb;Port=5432;Database=CatalogDb;User Id=postgres;Password=postgres;Include Error Detail=true
+    depends_on:
+      - catalogdb
     ports:
-      - "5050:8080"
+      - "6000:8080"
       - "6060:8081"
     volumes:
-      - ~/.microsoft/usersecrets:/home/app/.microsoft/usersecrets:ro
-      - ~/.aspnet/https:/https:ro
+      # Allow overriding secrets and https cert paths per OS/environment.
+      # Defaults work for macOS/Linux; on Windows you can set these in a .env file.
+      - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
+      - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
+
+  basket.api:
+    container_name: Basket.API
+    image: ${DOCKER_REGISTRY-}basketapi
+    build:
+      context: .
+      dockerfile: Services/Basket/Basket.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+    ports:
+      - "7001:8080"
 
 volumes:
   postgres_catalog:
