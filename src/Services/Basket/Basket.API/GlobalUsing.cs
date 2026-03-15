@@ -8,3 +8,4 @@ global using FluentValidation;
 global using BuildingBlocks.Behaviours;
 global using BuildingBlocks.Exceptions;
 global using Basket.API.Exceptions;
+global using Basket.API.Data;

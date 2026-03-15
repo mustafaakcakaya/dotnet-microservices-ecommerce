@@ -62,3 +62,6 @@ logs/
 *.user
 *.userosscache
 *.sln.docstates
+
+# Temp (Postman collections, local scratch)
+temp/

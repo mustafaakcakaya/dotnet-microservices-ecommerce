@@ -15,23 +15,13 @@ public class StoreBasketCommandValidator : AbstractValidator<StoreBasketCommand>
     }
 }
 
-public class StoreBasketCommandHandler 
+public class StoreBasketCommandHandler (IBasketRepository basketRepository)
         : ICommandHandler<StoreBasketCommand, StoreBasketResult>
 {
     public async Task<StoreBasketResult> Handle(StoreBasketCommand command, CancellationToken cancellationToken)
     {
-        if (command.Cart is null)
-        {
-            // Let validation middleware / exception handler generate a proper 400 response
-            throw new ValidationException("Cart can not be empty");
-        }
+        var basket = await basketRepository.CreateBasket(command.Cart, cancellationToken);
 
-        ShoppingCart cart = command.Cart;
-        
-        //TODO: Implement the logic to store the basket later.
-        //await _basketRepository.StoreBasket(cart);
-        //TODO: update cache later.
-
-        return new StoreBasketResult(cart.UserName);
+        return new StoreBasketResult(basket.UserName);
     }
 }

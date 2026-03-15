@@ -1,7 +1,7 @@
 namespace Basket.API.Basket.DeleteBasket;
 
 public record DeleteBasketCommand(string UserName) : ICommand<DeleteBasketResult>;
-public record DeleteBasketResult(string UserName);
+public record DeleteBasketResult(string UserName, bool IsSuccess);
 
 
 public class DeleteBasketCommandValidator : AbstractValidator<DeleteBasketCommand>
@@ -12,17 +12,15 @@ public class DeleteBasketCommandValidator : AbstractValidator<DeleteBasketComman
     }
 }
 
-public class DeleteBasketCommandHandler 
+public class DeleteBasketCommandHandler (IBasketRepository basketRepository)
     : ICommandHandler<DeleteBasketCommand, DeleteBasketResult>
 {
     public async Task<DeleteBasketResult> Handle(DeleteBasketCommand command, CancellationToken cancellationToken)
     {
         string userName = command.UserName;
-        
-        //TODO: Implement the logic to delete the basket later.
-        //await _basketRepository.DeleteBasket(userName);
+        await basketRepository.DeleteBasket(userName, cancellationToken);
         //TODO: update cache later.
 
-        return new DeleteBasketResult(userName);
+        return new DeleteBasketResult(userName, IsSuccess: true);
     }
 }
