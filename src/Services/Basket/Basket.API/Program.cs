@@ -1,5 +1,3 @@
-using Carter;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -19,11 +17,12 @@ builder.Services.AddMarten(opts =>
 }).UseLightweightSessions();
 
 builder.Services.AddScoped<IBasketRepository, BasketRepository>();
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
 var app = builder.Build();
 
-//Configure the HTTP request pipeline.
-
+// Configure the HTTP request pipeline (same order as Catalog.API).
 app.MapCarter();
+app.UseExceptionHandler(options => { });
 
 app.Run();
