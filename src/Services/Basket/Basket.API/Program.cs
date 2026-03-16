@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Caching.Distributed;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -17,6 +19,16 @@ builder.Services.AddMarten(opts =>
 }).UseLightweightSessions();
 
 builder.Services.AddScoped<IBasketRepository, BasketRepository>();
+builder.Services.AddScoped<IBasketRepository, CachedBasketRepository>();
+
+builder.Services.AddScoped<IBasketRepository>(provider => {
+    var basketRepository = provider.GetRequiredService<IBasketRepository>();
+    var cache = provider.GetRequiredService<IDistributedCache>();
+
+    return new CachedBasketRepository(basketRepository, cache);
+});
+
+
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
 var app = builder.Build();

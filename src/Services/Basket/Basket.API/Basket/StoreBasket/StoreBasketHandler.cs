@@ -20,7 +20,7 @@ public class StoreBasketCommandHandler (IBasketRepository basketRepository)
 {
     public async Task<StoreBasketResult> Handle(StoreBasketCommand command, CancellationToken cancellationToken)
     {
-        var basket = await basketRepository.CreateBasket(command.Cart, cancellationToken);
+        var basket = await basketRepository.StoreBasket(command.Cart, cancellationToken);
 
         return new StoreBasketResult(basket.UserName);
     }
