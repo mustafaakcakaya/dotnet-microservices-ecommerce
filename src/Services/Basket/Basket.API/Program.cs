@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Caching.Distributed;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,8 +16,12 @@ builder.Services.AddMarten(opts =>
     opts.Schema.For<ShoppingCart>().Identity(x => x.UserName);
 }).UseLightweightSessions();
 
-builder.Services.AddScoped<IBasketRepository, BasketRepository>();
-builder.Services.Decorate<IBasketRepository, CachedBasketRepository>();
+builder.Services.AddScoped<BasketRepository>();
+builder.Services.AddScoped<IBasketRepository>(sp =>
+    new CachedBasketRepository(
+        sp.GetRequiredService<BasketRepository>(),
+        sp.GetRequiredService<IDistributedCache>(),
+        sp.GetRequiredService<ILogger<CachedBasketRepository>>()));
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -29,10 +31,19 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!)
+    .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline (same order as Catalog.API).
 app.MapCarter();
 app.UseExceptionHandler(options => { });
+app.MapHealthChecks("/health",
+    new HealthCheckOptions
+    {
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    });
 
 app.Run();

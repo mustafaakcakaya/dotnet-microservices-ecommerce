@@ -68,10 +68,20 @@ services:
       dockerfile: Services/Basket/Basket.API/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      # Align with launchSettings: http profile uses 5001, https uses 5051
-      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/basket-api.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=basket_dev_cert_password
+      - ConnectionStrings__Database=Server=basketdb;Port=5432;Database=BasketDb;User Id=postgres;Password=postgres;Include Error Detail=true
+      - ConnectionStrings__Redis=distributedcache:6379
+    depends_on:
+      - basketdb
+      - distributedcache
     ports:
-      - "5001:8080"
+      - "6001:8080"
+      - "6061:8081"
+    volumes:
+      - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
+      - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
 
 volumes:
   postgres_catalog:
