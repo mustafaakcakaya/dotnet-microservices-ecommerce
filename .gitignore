@@ -65,3 +65,8 @@ logs/
 
 # Temp (Postman collections, local scratch)
 temp/
+
+# Local SQLite databases (e.g. Discount.Grpc EF dev)
+*.db
+*.db-shm
+*.db-wal
