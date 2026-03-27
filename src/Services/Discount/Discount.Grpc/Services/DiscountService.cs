@@ -1,35 +1,29 @@
-using Discount.Grpc.Data;
-using Grpc.Core;
-using Microsoft.EntityFrameworkCore;
-
 namespace Discount.Grpc.Services;
 
 public class DiscountService(
     ILogger<DiscountService> logger,
-    IDbContextFactory<DiscountContext> dbFactory) : DiscountProtoService.DiscountProtoServiceBase
+    DiscountContext dbContext) : DiscountProtoService.DiscountProtoServiceBase
 {
     public override async Task<CouponModel> GetDiscount(GetDiscountRequest request, ServerCallContext context)
     {
         logger.LogInformation("GetDiscount invoked for product {ProductName}", request.ProductName);
 
-        await using var db = await dbFactory.CreateDbContextAsync();
-        var coupon = await db.Coupons
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.ProductName == request.ProductName);
-
+        var coupon = await dbContext.Coupons.FirstOrDefaultAsync(
+            x => x.ProductName == request.ProductName);
+        
         if (coupon is null)
         {
-            throw new RpcException(new Status(StatusCode.NotFound,
-                $"No discount found for product '{request.ProductName}'."));
+            coupon = new Coupon
+            {
+                ProductName = "No Discount",
+                Amount = 0,
+                Description = "No Discount Desc"
+            };
         }
-
-        return new CouponModel
-        {
-            Id = coupon.Id,
-            ProductName = coupon.ProductName,
-            Desciption = coupon.Description,
-            Amount = coupon.Amount
-        };
+        
+        logger.LogInformation("Discount is retrieved for ProductName :  {ProductName}, Amount : {Amount}, ", request.ProductName, coupon.Amount);
+        var couponModel = coupon.Adapt<CouponModel>();
+        return couponModel;
     }
 
     public override Task<CouponModel> CreateDiscount(CreateDiscountRequest request, ServerCallContext context)

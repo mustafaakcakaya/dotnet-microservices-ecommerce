@@ -8,8 +8,7 @@ public static class Extensions
     public static IApplicationBuilder UseMigrations(this IApplicationBuilder app)
     {
         using var scope = app.ApplicationServices.CreateScope();
-        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<DiscountContext>>();
-        using var dbContext = factory.CreateDbContext();
+        var dbContext = scope.ServiceProvider.GetRequiredService<DiscountContext>();
         dbContext.Database.Migrate();
 
         return app;

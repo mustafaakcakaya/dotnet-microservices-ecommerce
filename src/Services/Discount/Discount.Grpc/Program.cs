@@ -1,15 +1,22 @@
-
 using Discount.Grpc.Data;
+using Discount.Grpc.Models;
 using Discount.Grpc.Services;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Mapster: entity uses Description; proto field is desciption -> Desciption in C#.
+TypeAdapterConfig<Coupon, CouponModel>.NewConfig()
+    .Map(dest => dest.Desciption, src => src.Description);
+
 // Add services to the container.
 builder.Services.AddGrpc();
 
-builder.Services.AddDbContextFactory<DiscountContext>(opts =>
+// Scoped DbContext + scoped gRPC service (singleton gRPC + DbContext causes DI / lifetime errors).
+builder.Services.AddDbContext<DiscountContext>(opts =>
     opts.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<DiscountService>();
 
 var app = builder.Build();
 
