@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Mapster: entity uses Description; proto field is desciption -> Desciption in C#.
 TypeAdapterConfig<Coupon, CouponModel>.NewConfig()
     .Map(dest => dest.Desciption, src => src.Description);
+TypeAdapterConfig<CouponModel, Coupon>.NewConfig()
+    .Map(dest => dest.Description, src => src.Desciption);
 
 // Add services to the container.
 builder.Services.AddGrpc();

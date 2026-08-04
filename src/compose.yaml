@@ -83,6 +83,25 @@ services:
       - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
       - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
 
+  discount.grpc:
+    container_name: Discount.Grpc
+    image: ${DOCKER_REGISTRY-}discountgrpc
+    build:
+      context: .
+      dockerfile: Services/Discount/Discount.Grpc/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/discount-grpc.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=discount_dev_cert_password
+      - ConnectionStrings__DefaultConnection=Data Source=discount.db
+    ports:
+      - "6002:8080"
+      - "6062:8081"
+    volumes:
+      - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
+      - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
+
 volumes:
   postgres_catalog:
   postgres_basket:

@@ -26,26 +26,69 @@ public class DiscountService(
         return couponModel;
     }
 
-    public override Task<CouponModel> CreateDiscount(CreateDiscountRequest request, ServerCallContext context)
+    public override async Task<CouponModel> CreateDiscount(CreateDiscountRequest request, ServerCallContext context)
     {
         logger.LogInformation("CreateDiscount invoked for product {ProductName}", request.Coupon?.ProductName ?? "(null)");
-        ArgumentNullException.ThrowIfNull(request.Coupon);
 
-        return Task.FromResult(request.Coupon);
+        var coupon = request.Coupon.Adapt<Coupon>();
+
+        if (coupon is null)
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid request object."));
+        }
+
+        dbContext.Coupons.Add(coupon);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Discount is successfully created. ProductName: {ProductName}",
+            coupon.ProductName);
+
+        return coupon.Adapt<CouponModel>();
     }
 
-    public override Task<CouponModel> UpdateDiscount(UpdateDiscountRequest request, ServerCallContext context)
+    public override async Task<CouponModel> UpdateDiscount(UpdateDiscountRequest request, ServerCallContext context)
     {
         logger.LogInformation("UpdateDiscount invoked for product {ProductName}", request.Coupon?.ProductName ?? "(null)");
-        ArgumentNullException.ThrowIfNull(request.Coupon);
 
-        return Task.FromResult(request.Coupon);
+        var coupon = request.Coupon.Adapt<Coupon>();
+
+        if (coupon is null)
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid request object."));
+        }
+
+        dbContext.Coupons.Update(coupon);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Discount is successfully updated. ProductName: {ProductName}",
+            coupon.ProductName);
+
+        return coupon.Adapt<CouponModel>();
     }
 
-    public override Task<DeleteDiscountResponse> DeleteDiscount(DeleteDiscountRequest request, ServerCallContext context)
+    public override async Task<DeleteDiscountResponse> DeleteDiscount(DeleteDiscountRequest request, ServerCallContext context)
     {
         logger.LogInformation("DeleteDiscount invoked for product {ProductName}", request.ProductName);
 
-        return Task.FromResult(new DeleteDiscountResponse { Success = "true" });
+        var coupon = await dbContext.Coupons.FirstOrDefaultAsync(
+            x => x.ProductName == request.ProductName);
+
+        if (coupon is null)
+        {
+            throw new RpcException(new Status(
+                StatusCode.NotFound,
+                $"Discount with ProductName = {request.ProductName} is not found."));
+        }
+
+        dbContext.Coupons.Remove(coupon);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Discount is successfully deleted. ProductName: {ProductName}",
+            request.ProductName);
+
+        return new DeleteDiscountResponse { Success = "true" };
     }
 }
