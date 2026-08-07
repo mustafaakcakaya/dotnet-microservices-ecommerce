@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/api/annotations.proto";
+
 option csharp_namespace = "Discount.Grpc";
 
 package discount;
@@ -7,10 +9,28 @@ package discount;
 // The discount service 
 service DiscountProtoService {
   // Discount CRUD Operations
-  rpc GetDiscount (GetDiscountRequest) returns (CouponModel);
-  rpc CreateDiscount (CreateDiscountRequest) returns (CouponModel);
-  rpc UpdateDiscount (UpdateDiscountRequest) returns (CouponModel);
-  rpc DeleteDiscount (DeleteDiscountRequest) returns (DeleteDiscountResponse);
+  rpc GetDiscount (GetDiscountRequest) returns (CouponModel) {
+    option (google.api.http) = {
+      get: "/api/discount/{productName}"
+    };
+  }
+  rpc CreateDiscount (CreateDiscountRequest) returns (CouponModel) {
+    option (google.api.http) = {
+      post: "/api/discount"
+      body: "coupon"
+    };
+  }
+  rpc UpdateDiscount (UpdateDiscountRequest) returns (CouponModel) {
+    option (google.api.http) = {
+      put: "/api/discount"
+      body: "coupon"
+    };
+  }
+  rpc DeleteDiscount (DeleteDiscountRequest) returns (DeleteDiscountResponse) {
+    option (google.api.http) = {
+      delete: "/api/discount/{productName}"
+    };
+  }
 }
 
 message GetDiscountRequest {
@@ -39,6 +59,5 @@ message DeleteDiscountRequest {
 message DeleteDiscountResponse {
   string success = 1;
 }
-
 
 

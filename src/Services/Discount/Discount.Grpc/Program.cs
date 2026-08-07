@@ -13,7 +13,10 @@ TypeAdapterConfig<CouponModel, Coupon>.NewConfig()
     .Map(dest => dest.Description, src => src.Desciption);
 
 // Add services to the container.
-builder.Services.AddGrpc();
+builder.Services.AddGrpc()
+    .AddJsonTranscoding();
+builder.Services.AddGrpcSwagger();
+builder.Services.AddSwaggerGen();
 
 // Scoped DbContext + scoped gRPC service (singleton gRPC + DbContext causes DI / lifetime errors).
 builder.Services.AddDbContext<DiscountContext>(opts =>
@@ -24,9 +27,15 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseMigrations();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Discount gRPC API v1"));
+}
+
 app.MapGrpcService<DiscountService>();
-app.MapGet("/",
-    () =>
-        "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();

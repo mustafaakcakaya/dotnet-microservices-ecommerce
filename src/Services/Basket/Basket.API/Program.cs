@@ -3,6 +3,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 var assembly = typeof(Program).Assembly;
 builder.Services.AddCarter();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddMediatR(config =>
 {
     config.RegisterServicesFromAssembly(assembly);
@@ -43,6 +45,15 @@ builder.Services.AddHealthChecks()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline (same order as Catalog.API).
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Basket API v1"));
+    app.MapGet("/", () => Results.Redirect("/swagger"))
+        .ExcludeFromDescription();
+}
+
 app.MapCarter();
 app.UseExceptionHandler(options => { });
 app.MapHealthChecks("/health",

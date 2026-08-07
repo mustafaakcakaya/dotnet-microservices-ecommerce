@@ -18,10 +18,10 @@ public class StoreBasketEndpoints
 
             return Results.Ok(response);
         })
-        .WithName("CreateProduct")
+        .WithName("StoreBasket")
         .Produces<StoreBasketResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status400BadRequest)
-        .WithSummary("Create Product")
-        .WithDescription("Create Product");
+        .WithSummary("Store a basket")
+        .WithDescription("Create or update a user's basket and apply available discounts");
     }
 }

@@ -14,10 +14,10 @@ public class GetBasketEndpoint  : ICarterModule
 
             return Results.Ok(response);
         })
-        .WithName("GetBasketById")
+        .WithName("GetBasketByUserName")
         .Produces<GetBasketResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status400BadRequest)
-        .WithSummary("Get Product By Id")
-        .WithDescription("Get Product By Id");
+        .WithSummary("Get a basket")
+        .WithDescription("Get the basket for the specified user");
     }
 }

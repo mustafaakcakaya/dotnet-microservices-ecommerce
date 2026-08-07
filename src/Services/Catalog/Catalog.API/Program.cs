@@ -7,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddCarter();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 var assembly = typeof(Program).Assembly;
 builder.Services.AddMediatR(config =>
 {
@@ -34,6 +36,15 @@ builder.Services.AddHealthChecks()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline (order as in standard example).
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Catalog API v1"));
+    app.MapGet("/", () => Results.Redirect("/swagger"))
+        .ExcludeFromDescription();
+}
+
 app.MapCarter();
 app.UseExceptionHandler(options => { });
 app.UseHealthChecks("/health", new HealthCheckOptions
