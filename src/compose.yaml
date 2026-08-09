@@ -35,6 +35,17 @@ services:
     volumes:
       - redis_data:/data
 
+  orderdb:
+    image: mcr.microsoft.com/mssql/server
+    platform: linux/amd64
+    container_name: orderdb
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=SwN12345678
+    restart: always
+    ports:
+      - "1433:1433"
+
   catalog.api:
     container_name: Catalog.API
     # Image name is parameterized so we can easily push to different registries.
