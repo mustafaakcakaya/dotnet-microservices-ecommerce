@@ -42,7 +42,8 @@ public class DispatchDomainEventsInterceptor(IMediator mediator) : SaveChangesIn
 
         foreach (var domainEvent in domainEvents)
         {
-            // NOTE: External side effects should be published as integration events through a transactional outbox.
+            // NOTE: For reliable external side effects, save the aggregate and an OutboxMessage in the same DB transaction.
+            // A background worker should publish the message to RabbitMQ and then mark it as processed.
             await mediator.Publish(domainEvent);
         }
     }
