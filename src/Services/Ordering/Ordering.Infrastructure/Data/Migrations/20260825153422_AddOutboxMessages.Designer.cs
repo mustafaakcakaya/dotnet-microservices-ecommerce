@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Ordering.Infrastructure.Data;
 
@@ -12,9 +13,11 @@ using Ordering.Infrastructure.Data;
 namespace Ordering.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260825153422_AddOutboxMessages")]
+    partial class AddOutboxMessages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -278,44 +281,6 @@ namespace Ordering.Infrastructure.Data.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("Ordering.Infrastructure.Inbox.InboxMessage", b =>
-                {
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConsumerName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("ProcessedOnUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ReceivedOnUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("MessageId", "ConsumerName");
-
-                    b.ToTable("InboxMessages", (string)null);
-                });
-
-            modelBuilder.Entity("Ordering.Infrastructure.Outbox.OutboxCdcCheckpoint", b =>
-                {
-                    b.Property<string>("ConsumerName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<byte[]>("LastProcessedLsn")
-                        .IsRequired()
-                        .HasColumnType("binary(10)");
-
-                    b.Property<DateTime>("UpdatedOnUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ConsumerName");
-
-                    b.ToTable("OutboxCdcCheckpoints", (string)null);
-                });
-
             modelBuilder.Entity("Ordering.Infrastructure.Outbox.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -348,32 +313,6 @@ namespace Ordering.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("OutboxMessages", (string)null);
-                });
-
-            modelBuilder.Entity("Ordering.Infrastructure.Outbox.OutboxPublishFailure", b =>
-                {
-                    b.Property<Guid>("OutboxMessageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("LastAttemptOnUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime?>("PoisonedOnUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("OutboxMessageId");
-
-                    b.HasIndex("PoisonedOnUtc")
-                        .HasFilter("[PoisonedOnUtc] IS NOT NULL");
-
-                    b.ToTable("OutboxPublishFailures", (string)null);
                 });
 
             modelBuilder.Entity("Ordering.Domain.Models.Order", b =>
