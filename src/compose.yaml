@@ -44,6 +44,9 @@ services:
       - SA_PASSWORD=SwN12345678
       # SQL Server Agent is required by the CDC capture job that feeds Ordering.Worker.
       - MSSQL_AGENT_ENABLED=true
+      # Pin the edition explicitly: CDC needs Developer/Standard/Enterprise.
+      # Express silently lacks CDC, and the worker would never see a change.
+      - MSSQL_PID=Developer
     restart: always
     ports:
       - "1433:1433"
