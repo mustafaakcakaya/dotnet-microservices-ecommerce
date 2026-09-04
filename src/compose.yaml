@@ -42,9 +42,46 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=SwN12345678
+      # SQL Server Agent is required by the CDC capture job that feeds Ordering.Worker.
+      - MSSQL_AGENT_ENABLED=true
     restart: always
     ports:
       - "1433:1433"
+
+  messagebroker:
+    image: rabbitmq:3-management
+    container_name: messagebroker
+    hostname: ecommerce-mq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # Optional broker: `docker compose --profile kafka up`.
+  # Switch the worker over with MessageBroker__Provider=Kafka.
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: kafka
+    profiles: ["kafka"]
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:29092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+    restart: always
+    ports:
+      - "29092:29092"
 
   catalog.api:
     container_name: Catalog.API
@@ -114,6 +151,30 @@ services:
     volumes:
       - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
       - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
+
+  # Single CDC listener instance on purpose: two instances sharing a ConsumerName
+  # would republish each other's messages (see docs/adr/0002-cdc-worker-single-instance.md).
+  ordering.worker:
+    container_name: Ordering.Worker
+    image: ${DOCKER_REGISTRY-}orderingworker
+    build:
+      context: .
+      dockerfile: Services/Ordering/Ordering.Worker/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ConnectionStrings__Database=Server=orderdb;Database=OrderDb;User Id=sa;Password=SwN12345678;Encrypt=False;TrustServerCertificate=True
+      # Set to Kafka (with the kafka profile running) to publish to Kafka instead.
+      - MessageBroker__Provider=${MESSAGE_BROKER_PROVIDER:-RabbitMq}
+      - MessageBroker__RabbitMq__Host=amqp://messagebroker:5672
+      - MessageBroker__RabbitMq__UserName=guest
+      - MessageBroker__RabbitMq__Password=guest
+      - MessageBroker__Kafka__BootstrapServers=kafka:9092
+    depends_on:
+      - orderdb
+      - messagebroker
+    ports:
+      - "6003:8080"
 
 volumes:
   postgres_catalog:
