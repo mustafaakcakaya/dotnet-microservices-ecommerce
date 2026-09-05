@@ -48,6 +48,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ordering.Worker.UnitTests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ordering.IntegrationTests", "..\tests\Services\Ordering\Ordering.IntegrationTests\Ordering.IntegrationTests.csproj", "{B98694FD-D9B7-4EAB-B2D7-BA20514F5BAB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingBlocks.UnitTests", "..\tests\BuildingBlocks\BuildingBlocks.UnitTests\BuildingBlocks.UnitTests.csproj", "{68D39083-E940-40A0-AA56-7D4EAB65356C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Basket.API.UnitTests", "..\tests\Services\Basket\Basket.API.UnitTests\Basket.API.UnitTests.csproj", "{DE17B4A5-06EE-42F2-B6E3-4CAC2E19D1A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,5 +131,13 @@ Global
 		{B98694FD-D9B7-4EAB-B2D7-BA20514F5BAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B98694FD-D9B7-4EAB-B2D7-BA20514F5BAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B98694FD-D9B7-4EAB-B2D7-BA20514F5BAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68D39083-E940-40A0-AA56-7D4EAB65356C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68D39083-E940-40A0-AA56-7D4EAB65356C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68D39083-E940-40A0-AA56-7D4EAB65356C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68D39083-E940-40A0-AA56-7D4EAB65356C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE17B4A5-06EE-42F2-B6E3-4CAC2E19D1A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE17B4A5-06EE-42F2-B6E3-4CAC2E19D1A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE17B4A5-06EE-42F2-B6E3-4CAC2E19D1A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE17B4A5-06EE-42F2-B6E3-4CAC2E19D1A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
