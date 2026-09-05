@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using MediatR;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.Logging;
 
 namespace BuildingBlocks.Behaviours;
@@ -12,25 +11,30 @@ public class LoggingBehaviour<TRequest, TResponse>
     where TResponse : notnull
 
 {
+    private static readonly TimeSpan SlowRequestThreshold = TimeSpan.FromSeconds(3);
+
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        logger.LogInformation("[START] Handle request={Request} - Response={Response} - RequestData={RequestData}", 
-            typeof(TRequest).Name, typeof(TResponse).Name, request);
+        // Only the contract names are logged, never the request itself: commands
+        // such as CreateOrderCommand carry payment details (card number, CVV),
+        // and serializing the whole object would write them to the logs in clear
+        // text - undoing the care taken to keep them out of the outbox payload.
+        logger.LogInformation("[START] Handle request={Request} - Response={Response}",
+            typeof(TRequest).Name, typeof(TResponse).Name);
 
-        var timer = new Stopwatch();
-        timer.Start();
-        
+        var timer = Stopwatch.StartNew();
+
         var response = await next();
-        
+
         timer.Stop();
         var timeTaken = timer.Elapsed;
-        if (timeTaken.Seconds > 3)
-            logger.LogInformation("[START] The request={Request} took {TimeTaken} seconds", 
-                typeof(TRequest).Name, timeTaken.Seconds);
-        
-        logger.LogInformation("[END] Handled request={Request} with Response={Response}", 
+        if (timeTaken > SlowRequestThreshold)
+            logger.LogWarning("[PERFORMANCE] The request={Request} took {TimeTaken:0.###} seconds",
+                typeof(TRequest).Name, timeTaken.TotalSeconds);
+
+        logger.LogInformation("[END] Handled request={Request} with Response={Response}",
             typeof(TRequest).Name, typeof(TResponse).Name);
-        
+
         return response;
     }
 }
