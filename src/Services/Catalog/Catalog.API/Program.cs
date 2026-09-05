@@ -24,7 +24,11 @@ builder.Services.AddMarten(opts =>
     opts.Connection(builder.Configuration.GetConnectionString("Database")!);
 }).UseLightweightSessions();
 
-if (builder.Environment.IsDevelopment())
+// Seeding is driven by an explicit switch so it never depends on guessing what
+// the environment means. It still defaults to the environment, so nothing has to
+// be configured for local development, but any deployment can turn it on or off
+// with Catalog:Seed (or the Catalog__Seed environment variable).
+if (builder.Configuration.GetValue<bool?>("Catalog:Seed") ?? builder.Environment.IsDevelopment())
     builder.Services.InitializeMartenWith<CatalogInitialData>();
 
 
