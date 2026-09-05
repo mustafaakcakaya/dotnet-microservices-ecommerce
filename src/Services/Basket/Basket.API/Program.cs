@@ -19,16 +19,22 @@ builder.Services.AddMarten(opts =>
 }).UseLightweightSessions();
 
 builder.Services.AddScoped<BasketRepository>();
+// A missing or malformed value falls back to the default rather than caching forever.
+var basketCacheTtl = builder.Configuration.GetValue<TimeSpan?>("CacheSettings:BasketTtl")
+                     ?? CachedBasketRepository.DefaultTtl;
 builder.Services.AddScoped<IBasketRepository>(sp =>
     new CachedBasketRepository(
         sp.GetRequiredService<BasketRepository>(),
         sp.GetRequiredService<IDistributedCache>(),
+        basketCacheTtl,
         sp.GetRequiredService<ILogger<CachedBasketRepository>>()));
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis")!;
-    //options.InstanceName = "Basket";
+    // Namespaces every key. Without it the bare user name is the key, which
+    // would collide with any other service sharing this Redis instance.
+    options.InstanceName = "basket:";
 });
 
 builder.Services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>(options =>
