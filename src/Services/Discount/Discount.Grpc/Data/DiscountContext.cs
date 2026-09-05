@@ -12,23 +12,8 @@ public class DiscountContext : DbContext
     {
     }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Coupon>()
-            .HasData(
-                new Coupon
-                {
-                    Id = 1,
-                    ProductName = "Iphone X",
-                    Description = "Iphone discount",
-                    Amount = 150
-                },
-                new Coupon
-                {
-                    Id = 2,
-                    ProductName = "Samsung 10",
-                    Description = "Samsung discount",
-                    Amount = 100
-                });
-    }
+    // Sample coupons used to live here as HasData, which welds the seed to the
+    // schema: it ships with every migration and cannot be turned off per
+    // environment. They now live in DiscountInitialData, so seeding is an
+    // explicit, switchable step like it already is in Catalog and Ordering.
 }

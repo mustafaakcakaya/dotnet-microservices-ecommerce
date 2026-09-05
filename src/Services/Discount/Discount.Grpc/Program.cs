@@ -27,6 +27,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseMigrations();
+app.UseSeeding(app.Configuration, app.Environment);
 
 if (app.Environment.IsDevelopment())
 {
