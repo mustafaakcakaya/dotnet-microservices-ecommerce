@@ -27,10 +27,11 @@ public sealed class InboxIdempotencyTests(SqlServerCdcFixture fixture) : IAsyncL
     public async Task DuplicateDelivery_RunsConsumerOnce()
     {
         var counter = new ConsumeCounter();
+        var inbox = new CountingInboxStore(new SqlServerInboxStore(fixture.ConnectionString));
 
         await using var provider = new ServiceCollection()
             .AddSingleton(counter)
-            .AddSingleton<IInboxStore>(new SqlServerInboxStore(fixture.ConnectionString))
+            .AddSingleton<IInboxStore>(inbox)
             .AddMassTransitTestHarness(config =>
             {
                 config.AddConsumer<CountingConsumer>();
@@ -57,14 +58,18 @@ public sealed class InboxIdempotencyTests(SqlServerCdcFixture fixture) : IAsyncL
                 TotalPrice = 1000
             };
 
-            // Same message id twice: this is exactly what a crash between publish
-            // and checkpoint write produces in the CDC worker.
+            // Same message id twice: exactly what a crash between publish and
+            // checkpoint write produces in the CDC worker.
             await harness.Bus.Publish(integrationEvent, context => context.MessageId = messageId);
             await harness.Bus.Publish(integrationEvent, context => context.MessageId = messageId);
 
-            await harness.InactivityTask;
+            // Waiting on the inbox itself is deterministic. The harness's Consumed
+            // observer cannot be used here: the filter short-circuits the duplicate
+            // before it reaches a consumer, so the second delivery is never observed.
+            await WaitForClaimAttemptsAsync(inbox, expected: 2);
 
             Assert.Equal(1, counter.Invocations);
+            Assert.Equal(1, inbox.RejectedClaims);
 
             await using var dbContext = fixture.CreateDbContext();
             var inboxRow = Assert.Single(await dbContext.InboxMessages
@@ -76,6 +81,50 @@ public sealed class InboxIdempotencyTests(SqlServerCdcFixture fixture) : IAsyncL
         {
             await harness.Stop();
         }
+    }
+
+    private static async Task WaitForClaimAttemptsAsync(CountingInboxStore inbox, int expected)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (inbox.ClaimAttempts < expected)
+        {
+            if (DateTime.UtcNow > deadline)
+            {
+                Assert.Fail($"Only {inbox.ClaimAttempts} of {expected} deliveries reached the inbox before the timeout.");
+            }
+
+            await Task.Delay(50);
+        }
+    }
+
+    /// <summary>
+    /// Wraps the real store so the test can tell how many deliveries reached the
+    /// inbox and how many of them were rejected as duplicates.
+    /// </summary>
+    private sealed class CountingInboxStore(IInboxStore inner) : IInboxStore
+    {
+        private int _claimAttempts;
+        private int _rejectedClaims;
+
+        public int ClaimAttempts => Volatile.Read(ref _claimAttempts);
+
+        public int RejectedClaims => Volatile.Read(ref _rejectedClaims);
+
+        public async Task<bool> TryBeginAsync(Guid messageId, string consumerName, CancellationToken cancellationToken)
+        {
+            var proceed = await inner.TryBeginAsync(messageId, consumerName, cancellationToken);
+
+            if (!proceed)
+            {
+                Interlocked.Increment(ref _rejectedClaims);
+            }
+
+            Interlocked.Increment(ref _claimAttempts);
+            return proceed;
+        }
+
+        public Task CompleteAsync(Guid messageId, string consumerName, CancellationToken cancellationToken) =>
+            inner.CompleteAsync(messageId, consumerName, cancellationToken);
     }
 
     private sealed class ConsumeCounter
