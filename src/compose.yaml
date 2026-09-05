@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   catalogdb:
-    image: postgres
+    image: postgres:18
     container_name: catalogdb
     environment:
       - POSTGRES_USER=postgres
@@ -13,8 +13,13 @@ services:
       - "5432:5432"
     volumes:
       - postgres_catalog:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d CatalogDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   basketdb:
-    image: postgres
+    image: postgres:18
     container_name: basketdb
     environment:
       - POSTGRES_USER=postgres
@@ -25,18 +30,28 @@ services:
       - "5433:5432"
     volumes:
       - postgres_basket:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d BasketDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   
   distributedcache:
-    image: redis
+    image: redis:8-alpine
     container_name: distributedcache
     restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   orderdb:
-    image: mcr.microsoft.com/mssql/server
+    image: mcr.microsoft.com/mssql/server:2025-latest
     platform: linux/amd64
     container_name: orderdb
     environment:
@@ -50,6 +65,12 @@ services:
     restart: always
     ports:
       - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   messagebroker:
     image: rabbitmq:3-management
@@ -62,6 +83,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   # Optional broker: `docker compose --profile kafka up`.
   # Switch the worker over with MessageBroker__Provider=Kafka.
@@ -85,6 +112,12 @@ services:
     restart: always
     ports:
       - "29092:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
 
   catalog.api:
     container_name: Catalog.API
@@ -101,7 +134,8 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Password=catalog_dev_cert_password
       - ConnectionStrings__Database=Server=catalogdb;Port=5432;Database=CatalogDb;User Id=postgres;Password=postgres;Include Error Detail=true
     depends_on:
-      - catalogdb
+      catalogdb:
+        condition: service_healthy
     ports:
       - "6000:8080"
       - "6060:8081"
@@ -126,9 +160,12 @@ services:
       - ConnectionStrings__Redis=distributedcache:6379
       - GrpcSettings__DiscountUrl=http://discount.grpc:8080
     depends_on:
-      - basketdb
-      - distributedcache
-      - discount.grpc
+      basketdb:
+        condition: service_healthy
+      distributedcache:
+        condition: service_healthy
+      discount.grpc:
+        condition: service_started
     ports:
       - "6001:8080"
       - "6061:8081"
@@ -174,8 +211,10 @@ services:
       - MessageBroker__RabbitMq__Password=guest
       - MessageBroker__Kafka__BootstrapServers=kafka:9092
     depends_on:
-      - orderdb
-      - messagebroker
+      orderdb:
+        condition: service_healthy
+      messagebroker:
+        condition: service_healthy
     ports:
       - "6003:8080"
 
