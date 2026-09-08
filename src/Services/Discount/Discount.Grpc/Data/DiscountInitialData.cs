@@ -20,13 +20,12 @@ public static class DiscountInitialData
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    // Product names must match the Catalog service exactly: discounts are looked
-    // up by ProductName, so "Iphone X" (the original spelling here) never matched
-    // the "iPhone X" the catalog seeds and that coupon never applied. Keep these
-    // in step with CatalogInitialData when either side changes.
+    // Product names must match CatalogInitialData exactly: discounts are looked up
+    // by an exact ProductName match, so a coupon whose name differs simply never
+    // applies. Keep the two in step whenever either side changes.
     private static IEnumerable<Coupon> GetPreconfiguredCoupons() =>
     [
-        new Coupon { ProductName = "iPhone X", Description = "Iphone discount", Amount = 150 },
+        new Coupon { ProductName = "iPhone X", Description = "iPhone discount", Amount = 150 },
         new Coupon { ProductName = "Samsung 10", Description = "Samsung discount", Amount = 100 }
     ];
 }
