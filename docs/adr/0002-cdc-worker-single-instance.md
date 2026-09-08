@@ -1,43 +1,48 @@
-# ADR 0002 — CDC worker şimdilik tek instance çalışır
+# ADR 0002 - The CDC worker runs as a single instance for now
 
-- **Durum:** Kabul edildi (geçici kısıt — yatay ölçekleme ileride ele alınacak)
-- **Tarih:** 2026-09-03
-- **Kapsam:** Ordering.Worker
+- **Status:** Accepted (temporary constraint - horizontal scaling to be addressed later)
+- **Date:** 2026-09-03
+- **Scope:** Ordering.Worker
 
-## Bağlam
+## Context
 
-`Ordering.Worker`, `dbo.OutboxCdcCheckpoints` tablosunda `ConsumerName` başına tek bir
-"son işlenen LSN" tutar. Aynı `ConsumerName` ile iki instance aynı anda çalışırsa:
+The worker keeps a single "last processed LSN" per `ConsumerName` in
+`dbo.OutboxCdcCheckpoints`. If two instances run concurrently under the same `ConsumerName`:
 
-- İkisi de aynı checkpoint'ten okur, **aynı mesajları publish eder** (gereksiz duplicate),
-- Checkpoint yazımında son yazan kazanır; yavaş instance checkpoint'i **geri alabilir**
-  ve daha da fazla tekrar üretir.
+- both read from the same checkpoint and **publish the same messages** (needless duplicates),
+- the last writer wins when saving the checkpoint, so a slower instance can **move it backwards**
+  and cause even more redelivery.
 
-Duplicate'ler consumer idempotency'si sayesinde veri bozulmasına yol açmaz (ADR 0001), ancak
-gereksiz yük ve karışık log/metrik üretir.
+Consumer idempotency (ADR 0001) keeps duplicates from corrupting data, but they still cost work
+and make logs and metrics harder to read.
 
-## Karar
+## Decision
 
-Şimdilik **yalnızca tek bir CDC listener instance'ı** çalıştırılır. Compose ve deployment
-tanımları worker'ı tek replika olarak kurar; ölçekleme yatay değil, `BatchSize` /
-`PollingInterval` ayarıyla dikey yapılır.
+Run **exactly one CDC listener instance**. Compose and deployment definitions declare the worker
+as a single replica; scaling is vertical - `BatchSize` and `PollingInterval` - rather than
+horizontal.
 
-## İleride (planlanan iş)
+## Future work
 
-Birden fazla instance isteneceği şimdiden biliniyor. Bunun için gereken minimum tasarım:
+More than one instance will be wanted. The minimum design for that:
 
-1. **Leader election / lease:** checkpoint tablosuna `LeaseOwner`, `LeaseExpiresOnUtc`
-   kolonları eklenip her instance periyodik olarak lease yeniler; lease'i olmayan instance
-   pasif bekler. (SQL Server'da `sp_getapplock` ile de yapılabilir; lease tablosu
-   gözlemlenebilirlik açısından daha iyidir.)
-2. Checkpoint yazımı `WHERE LeaseOwner = @Me AND LeaseExpiresOnUtc > SYSUTCDATETIME()`
-   koşuluyla yapılıp geri alma (regression) engellenir.
-3. Alternatif olarak `ConsumerName` başına partisyonlama (örn. `AggregateId` hash aralığı)
-   ile gerçek paralellik; ancak CDC okuması LSN sıralı olduğu için bu daha karmaşıktır ve
-   aggregate başına sıralamayı korumak için dikkat ister.
+1. **Leader election / lease:** add `LeaseOwner` and `LeaseExpiresOnUtc` to the checkpoint table
+   and have each instance renew the lease periodically; an instance without the lease waits.
+   (SQL Server's `sp_getapplock` would also work; a lease table is better for observability.)
+2. Write the checkpoint with `WHERE LeaseOwner = @Me AND LeaseExpiresOnUtc > SYSUTCDATETIME()`
+   so it can never regress.
+3. Alternatively, partition per `ConsumerName` (for example by a hash range of `AggregateId`) for
+   real parallelism. CDC reads are LSN-ordered, so this is more involved and needs care to
+   preserve per-aggregate ordering.
 
-Bu iş **bu değişikliğin kapsamı dışındadır** ve ayrı bir ADR + implementasyon ile ele alınacaktır.
+This work is **out of scope** for the current change and will get its own ADR and implementation.
 
-## İlgili
+## Note
 
-- ADR 0001 — At-least-once ve consumer-side idempotency
+A polling-based reader (`SELECT ... FOR UPDATE SKIP LOCKED`) would remove this constraint by
+itself, but it was not chosen because it conflicts with the goal of learning and porting CDC. It
+could be added later as a second reading strategy over the same outbox table, for comparison.
+
+## Related
+
+- ADR 0001 - At-least-once delivery and consumer-side idempotency

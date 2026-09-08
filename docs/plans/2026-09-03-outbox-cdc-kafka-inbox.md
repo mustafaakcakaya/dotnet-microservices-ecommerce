@@ -1,95 +1,100 @@
-# Uygulama planı — Kafka desteği, CDC'nin EF migration'a taşınması, consumer inbox'ı
+# Implementation plan - Kafka support, CDC in EF migrations, consumer inbox
 
-Tarih: 2026-09-03 · Durum: uygulanıyor
+Date: 2026-09-03 · Status: implemented
 
-Mevcut durum: Ordering'de Transactional Outbox + SQL Server CDC + RabbitMQ(MassTransit)
-publish eden `Ordering.Worker` çalışıyor; CDC kurulumu worker içindeki idempotent bir
-initializer + ayrı SQL script ile yapılıyor.
+Starting point: Ordering already had a Transactional Outbox with SQL Server CDC and a worker
+publishing to RabbitMQ through MassTransit; CDC was set up by an idempotent initializer inside
+the worker plus a separate SQL script.
 
-Bu plan üç boşluğu kapatır:
+This plan closed three gaps:
 
-1. Broker seçimi konfigürasyona bağlansın; **Kafka varsa sorunsuz Kafka'ya bağlanabilsin**.
-2. CDC kurulumu **EF migration'ının parçası** olsun (tek kaynak: migration).
-3. Consumer tarafı **idempotent** olabilsin (inbox pattern) — ADR 0001'in gereği.
+1. Make the broker a configuration choice so the services can **connect to Kafka when Kafka is
+   there**.
+2. Make CDC setup **part of the EF migrations** (a single source of truth).
+3. Let consumers be **idempotent** (inbox pattern) - the obligation ADR 0001 creates.
 
 ---
 
-## Faz 1 — Broker abstraction: RabbitMQ + Kafka
+## Phase 1 - Broker abstraction: RabbitMQ and Kafka
 
-**Nerede:** `src/BuildingBlocks/BuildingBlocks.Messaging`
+**Where:** `src/BuildingBlocks/BuildingBlocks.Messaging`
 
-- `IntegrationEventEnvelope` (Id, EventType, SchemaVersion, AggregateId, CorrelationId,
-  OccurredOnUtc, Payload) ortak tipe çıkarılır. Worker'daki `OutboxMessageRecord` bununla
-  değiştirilir — CDC okuyucusu ile publisher aynı zarfı konuşur.
-- `IIntegrationEventPublisher` worker'dan BuildingBlocks.Messaging'e taşınır.
-- İki implementasyon:
-  - `RabbitMqIntegrationEventPublisher` — MassTransit `IBus.Publish`, `MessageId = envelope.Id`.
-  - `KafkaIntegrationEventPublisher` — `Confluent.Kafka` producer.
-    - topic = `{TopicPrefix}{EventType}` (örn. `ordering.order-created`)
-    - key = `AggregateId` → **aggregate başına sıralama** garantisi
+- Extracted a shared `IntegrationEventEnvelope` (Id, EventType, SchemaVersion, AggregateId,
+  CorrelationId, OccurredOnUtc, Payload), replacing the worker's `OutboxMessageRecord` so the CDC
+  reader and the publishers speak the same envelope.
+- Moved `IIntegrationEventPublisher` out of the worker into BuildingBlocks.Messaging.
+- Two implementations:
+  - `RabbitMqIntegrationEventPublisher` - MassTransit `IBus.Publish`, `MessageId = envelope.Id`.
+  - `KafkaIntegrationEventPublisher` - Confluent producer.
+    - topic = `{TopicPrefix}{EventType}` (for example `ordering.order-created`)
+    - key = `AggregateId`, giving **per-aggregate ordering**
     - headers: `message-id`, `event-type`, `schema-version`, `correlation-id`, `occurred-on-utc`
-    - value = outbox'taki JSON payload aynen (yeniden serialize edilmez)
-    - `EnableIdempotence=true`, `Acks=All` → producer retry'larında broker-side dedup
-- `MessageBrokerOptions`: `Provider: RabbitMq | Kafka` + provider'a özel alt bölümler.
-  `AddMessageBroker(configuration)` provider'a göre publisher + health check kaydeder.
-- Publisher'ın broker bağımlılığı bu iki sınıfla sınırlı kalır; worker sadece arayüzü bilir.
+    - value = the stored JSON payload as-is, never re-serialized
+    - `EnableIdempotence=true` and `Acks=All`, so producer retries are deduplicated broker-side
+- `MessageBrokerOptions`: `Provider: RabbitMq | Kafka` plus provider-specific sections.
+  `AddMessageBroker(configuration)` registers the matching publisher and health check.
+- Broker knowledge is confined to those two classes; the worker only knows the interface.
 
-## Faz 2 — CDC kurulumu EF migration'a
+## Phase 2 - CDC setup moved into EF migrations
 
-**Nerede:** `src/Services/Ordering/Ordering.Infrastructure`
+**Where:** `src/Services/Ordering/Ordering.Infrastructure`
 
-- Worker'ın kullandığı tablolar EF entity'sine terfi eder (şema tek yerden yönetilsin):
-  `OutboxCdcCheckpoint`, `OutboxPublishFailure`, `InboxMessage`.
-  → `AddOutboxCdcTables` migration'ı (normal `CreateTable` operasyonları, snapshot tutarlı).
-- CDC etkinleştirme ayrı migration: `EnableOutboxCdc`.
-  - `migrationBuilder.Sql(script, suppressTransaction: true)` kullanılır. **Neden:**
-    `sys.sp_cdc_enable_db` / `sp_cdc_enable_table` transaction içinde çalışmayı reddeder;
-    EF migration'ları varsayılan olarak transaction içinde koşar. `suppressTransaction`
-    tam olarak bu durum için vardır — böylece CDC kurulumu migration'ın parçası olur.
-  - Script idempotenttir (tekrar çalıştırılabilir), yalnız `dbo.OutboxMessages` için
-    `dbo_OutboxMessages` capture instance'ı açar.
-- Worker'daki `CdcSchemaInitializer`, `ApplySchema` option'ı ve `Scripts/cdc-init.sql`
-  **silinir** (şema artık migration'ın; iki kaynak drift üretir).
-  Yerine `CdcReadinessWaiter`: worker başlarken capture instance hazır olana kadar bekler ve
-  neden beklediğini açıkça loglar (worker, API migration'ları uygulamadan önce ayağa kalkabilir).
+- The worker's tables were promoted to EF entities so the schema is owned in one place:
+  `OutboxCdcCheckpoint`, `OutboxPublishFailure`, `InboxMessage`
+  → the `AddOutboxCdcAndInboxTables` migration (ordinary `CreateTable` operations, snapshot
+  consistent).
+- CDC enablement is its own migration, `EnableOutboxCdc`.
+  - Every statement runs with `migrationBuilder.Sql(script, suppressTransaction: true)`.
+    **Why:** `sys.sp_cdc_enable_db` and `sp_cdc_enable_table` refuse to execute inside a
+    transaction, and EF wraps migrations in one by default. `suppressTransaction` exists for
+    exactly this case, and it is what allows CDC setup to live in a migration rather than a
+    separate deployment script.
+  - The script is idempotent and creates a capture instance for `dbo.OutboxMessages` only.
+- The worker's `CdcSchemaInitializer`, its `ApplySchema` option and `Scripts/cdc-init.sql` were
+  **deleted** - the schema belongs to the migrations, and two sources would drift.
+  `CdcReadinessWaiter` replaced them: the worker waits until the capture instance exists and logs
+  what it is waiting for, since it can start before the migrations have been applied.
 
-## Faz 3 — Consumer-side idempotency (inbox)
+## Phase 3 - Consumer-side idempotency (inbox)
 
-**Nerede:** `src/BuildingBlocks/BuildingBlocks.Messaging/Inbox`
+**Where:** `src/BuildingBlocks/BuildingBlocks.Messaging/Inbox`
 
-- `IInboxStore`: `TryBeginAsync(messageId, consumerName, ct) -> bool`, `CompleteAsync(...)`.
-- `SqlServerInboxStore`: `dbo.InboxMessages` (PK: MessageId + ConsumerName).
-  İlk görülüşte satır eklenir → `true`; ikinci görülüşte PK ihlali yakalanır → `false` (atla).
-- MassTransit entegrasyonu: `IdempotentConsumeFilter<T>` + `UseIdempotentConsumers()`.
-  `MessageId` yoksa mesaj reddedilir (idempotency anahtarsız işlenemez).
-- Kafka consumer'ları için de aynı store kullanılabilir (broker-agnostik arayüz).
+- `IInboxStore`: `TryBeginAsync(messageId, consumerName)` and `CompleteAsync(...)`.
+- `SqlServerInboxStore` over `dbo.InboxMessages` (primary key: MessageId + ConsumerName).
+  A first sighting inserts the row and returns true; a second one hits the primary key violation
+  and is skipped.
+- MassTransit integration: `IdempotentConsumeFilter<T>`. A message without a `MessageId` is
+  rejected, because it cannot be deduplicated.
+- The same store works for Kafka consumers - the interface is broker-agnostic.
 
-## Faz 4 — Compose ve konfigürasyon
+## Phase 4 - Compose and configuration
 
-- `compose.yaml`: Kafka (KRaft modu, tek broker) **`kafka` profili** altında — varsayılan
-  stack'i ağırlaştırmaz, `docker compose --profile kafka up` ile gelir.
-- `ordering.worker` servisine `MessageBroker__Provider` env'i eklenir (varsayılan RabbitMq).
-- Şifre/connection string kaynak koda gömülmez; compose env'den okunur.
+- Kafka lives behind a **`kafka` profile** so the default stack stays light:
+  `docker compose --profile kafka up`.
+- `MessageBroker__Provider` is an environment variable on the worker (default RabbitMq).
+- `MSSQL_AGENT_ENABLED=true` on `orderdb` - without SQL Server Agent the CDC capture job never
+  runs, which was the missing piece that made the whole pipeline look broken.
+- No passwords or connection strings in source; they come from compose environment variables.
 
-## Faz 5 — Testler
+## Phase 5 - Tests
 
-- Mevcut unit testler yeni zarf tipine göre güncellenir.
-- Yeni: Kafka publisher integration testi (Testcontainers.Kafka) — mesaj gerçekten üretiliyor,
-  `message-id` header'ı ve key doğru.
-- Yeni: inbox idempotency testi (gerçek SQL Server) — aynı `MessageId` iki kez tüketilir,
-  handler bir kez çalışır.
-- Mevcut CDC pipeline + outbox transaction testleri regresyonsuz geçmeli.
-- Docker'da uçtan uca: RabbitMQ profili ve Kafka profili ile ayrı ayrı doğrulama.
+- Existing unit tests updated for the new envelope type.
+- New: Kafka publisher integration test (Testcontainers) - the message really is produced, with
+  the right key and `message-id` header.
+- New: inbox idempotency test against a real SQL Server - the same `MessageId` delivered twice
+  runs the handler once.
+- Existing CDC pipeline and outbox transaction tests pass unchanged.
+- End to end on Docker, verified separately for the RabbitMQ and Kafka profiles.
 
-## Kapsam dışı (bilinçli)
+## Deliberately out of scope
 
-- **Worker'ın yatay ölçeklenmesi** — tek instance kalır, lease/lock tasarımı ADR 0002'de.
-- Outbox/inbox retention & arşivleme job'ı.
-- Schema registry (Avro/Protobuf); şimdilik JSON + `SchemaVersion` alanı yeterli.
+- **Horizontal scaling of the worker** - it stays single-instance; the lease design is in ADR 0002.
+- Retention and archival for the outbox and inbox tables.
+- A schema registry (Avro/Protobuf); JSON plus the `SchemaVersion` field is enough for now.
 
-## Kabul kriterleri
+## Acceptance criteria
 
-- [ ] `MessageBroker:Provider=Kafka` ile worker Kafka'ya publish eder, kod değişikliği gerekmez.
-- [ ] Sıfırdan `dotnet ef database update` sonrası CDC hazır; worker ek kurulum yapmaz.
-- [ ] Aynı `MessageId` iki kez teslim edilse de consumer iş mantığı bir kez çalışır.
-- [ ] Tüm test paketleri yeşil; build uyarısı artmaz.
+- [x] With `MessageBroker:Provider=Kafka` the worker publishes to Kafka, no code change required.
+- [x] After a clean `dotnet ef database update` CDC is ready; the worker sets nothing up itself.
+- [x] The same `MessageId` delivered twice runs consumer logic once.
+- [x] All test suites green; no new build warnings.
