@@ -1,0 +1,51 @@
+@page
+@model ContactModel
+@{
+    ViewData["Title"] = "Contact";
+}
+
+<div class="row g-5 align-items-start">
+    <section class="col-lg-7">
+        <p class="text-success fw-semibold mb-1">Contact</p>
+        <h1>How can we help?</h1>
+        <p class="text-secondary mb-4">Send a message to the storefront team.</p>
+
+        <form method="post" class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Message" class="form-label"></label>
+                    <textarea asp-for="Message" class="form-control" rows="6"></textarea>
+                    <span asp-validation-for="Message" class="text-danger"></span>
+                </div>
+                <button class="btn btn-success" type="submit">Send message</button>
+            </div>
+        </form>
+    </section>
+    <aside class="col-lg-5">
+        <div class="rounded-4 bg-dark text-white p-4 p-lg-5">
+            <h2 class="h4">EShop support</h2>
+            <p class="text-white-50">Questions about products, checkout or an existing order are welcome.</p>
+            <dl class="mb-0">
+                <dt>Email</dt>
+                <dd>support@example.com</dd>
+                <dt>Hours</dt>
+                <dd class="mb-0">Monday–Friday, 09:00–18:00</dd>
+            </dl>
+        </div>
+    </aside>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

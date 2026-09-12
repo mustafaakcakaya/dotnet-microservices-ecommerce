@@ -1,0 +1,45 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<section class="hero rounded-4 overflow-hidden mb-5">
+    <div class="row g-0 align-items-center">
+        <div class="col-lg-6 p-4 p-lg-5">
+            <span class="badge text-bg-success mb-3">Microservices storefront</span>
+            <h1 class="display-5 fw-bold">Products from independent services, in one experience.</h1>
+            <p class="lead text-secondary">Browse the catalog, manage your basket and follow your orders through a single gateway.</p>
+            <a class="btn btn-dark btn-lg" asp-page="/ProductList">Explore products</a>
+        </div>
+        <div class="col-lg-6">
+            <img class="w-100 hero-image" src="~/images/banner/banner1.png" alt="Featured products" />
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <div>
+            <p class="text-success fw-semibold mb-1">Catalog</p>
+            <h2 class="mb-0">Featured products</h2>
+        </div>
+        <a asp-page="/ProductList" class="link-dark">View all</a>
+    </div>
+
+    @if (Model.Products.Count == 0)
+    {
+        <div class="alert alert-info">No products are available yet.</div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var product in Model.Products.Take(8))
+            {
+                <div class="col-sm-6 col-lg-3">
+                    <partial name="_ProductCard" model="product" />
+                </div>
+            }
+        </div>
+    }
+</section>

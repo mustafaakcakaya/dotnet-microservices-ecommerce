@@ -1,0 +1,16 @@
+@page
+@model ConfirmationModel
+@{
+    ViewData["Title"] = "Confirmation";
+}
+
+<section class="confirmation-card text-center mx-auto p-5 rounded-4 shadow-sm">
+    <div class="confirmation-icon mx-auto mb-4">✓</div>
+    <p class="text-success fw-semibold text-uppercase">Completed</p>
+    <h1 class="display-6 fw-bold">@Model.Message</h1>
+    <p class="text-secondary mt-3">You can continue shopping or review your recent orders.</p>
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+        <a class="btn btn-success" asp-page="/ProductList">Continue shopping</a>
+        <a class="btn btn-outline-dark" asp-page="/OrderList">View orders</a>
+    </div>
+</section>

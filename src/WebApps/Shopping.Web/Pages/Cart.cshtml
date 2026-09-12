@@ -1,0 +1,69 @@
+@page
+@model CartModel
+@{
+    ViewData["Title"] = "Cart";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-success fw-semibold mb-1">Basket</p>
+        <h1 class="mb-0">Your cart</h1>
+    </div>
+    <a class="btn btn-outline-dark" asp-page="/ProductList">Continue shopping</a>
+</div>
+
+@if (Model.Cart.Items.Count == 0)
+{
+    <div class="empty-state text-center rounded-4 border p-5">
+        <h2 class="h4">Your cart is empty</h2>
+        <p class="text-secondary">Add a product to begin checkout.</p>
+        <a class="btn btn-success" asp-page="/ProductList">Browse products</a>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Product</th>
+                        <th>Color</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-end">Price</th>
+                        <th class="text-end">Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Cart.Items)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.ProductName</td>
+                            <td>@item.Color</td>
+                            <td class="text-center">@item.Quantity</td>
+                            <td class="text-end">@item.Price.ToString("C")</td>
+                            <td class="text-end">@((item.Price * item.Quantity).ToString("C"))</td>
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="RemoveFromCart">
+                                    <input type="hidden" name="productId" value="@item.ProductId" />
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-semibold">Total</td>
+                        <td class="text-end fs-5 fw-bold">@Model.Cart.TotalPrice.ToString("C")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-body border-top text-end">
+            <a class="btn btn-success btn-lg" asp-page="/Checkout">Proceed to checkout</a>
+        </div>
+    </div>
+}

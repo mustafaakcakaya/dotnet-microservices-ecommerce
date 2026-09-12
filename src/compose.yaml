@@ -1,5 +1,3 @@
-version: '3.4'
-
 services:
   catalogdb:
     image: postgres:18
@@ -251,7 +249,7 @@ services:
       messagebroker:
         condition: service_healthy
     ports:
-      - "6005:8080"
+      - "6006:8080"
 
   yarpapigateway:
     container_name: YarpApiGateway
@@ -271,6 +269,28 @@ services:
     ports:
       - "6004:8080"
       - "6064:8081"
+    volumes:
+      - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
+      - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
+
+  shopping.web:
+    container_name: Shopping.Web
+    image: ${DOCKER_REGISTRY-}shoppingweb
+    build:
+      context: .
+      dockerfile: WebApps/Shopping.Web/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+      - ASPNETCORE_HTTPS_PORT=6065
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/shopping-web.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=shopping_web_dev_cert_password
+      - ApiSettings__GatewayAddress=http://yarpapigateway:8080
+    depends_on:
+      - yarpapigateway
+    ports:
+      - "6005:8080"
+      - "6065:8081"
     volumes:
       - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
       - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro

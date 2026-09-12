@@ -1,0 +1,118 @@
+@page
+@model CheckoutModel
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<div class="row g-5">
+    <section class="col-lg-8">
+        <p class="text-success fw-semibold mb-1">Secure checkout</p>
+        <h1 class="mb-4">Shipping and payment</h1>
+
+        <form method="post" asp-page-handler="Checkout" class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <h2 class="h5 mb-3">Shipping address</h2>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Order.FirstName" class="form-label"></label>
+                        <input asp-for="Order.FirstName" class="form-control" autocomplete="given-name" />
+                        <span asp-validation-for="Order.FirstName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Order.LastName" class="form-label"></label>
+                        <input asp-for="Order.LastName" class="form-control" autocomplete="family-name" />
+                        <span asp-validation-for="Order.LastName" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Order.EmailAddress" class="form-label"></label>
+                        <input asp-for="Order.EmailAddress" class="form-control" autocomplete="email" />
+                        <span asp-validation-for="Order.EmailAddress" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Order.AddressLine" class="form-label"></label>
+                        <input asp-for="Order.AddressLine" class="form-control" autocomplete="street-address" />
+                        <span asp-validation-for="Order.AddressLine" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Order.Country" class="form-label"></label>
+                        <input asp-for="Order.Country" class="form-control" autocomplete="country-name" />
+                        <span asp-validation-for="Order.Country" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Order.State" class="form-label"></label>
+                        <input asp-for="Order.State" class="form-control" autocomplete="address-level1" />
+                        <span asp-validation-for="Order.State" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Order.ZipCode" class="form-label"></label>
+                        <input asp-for="Order.ZipCode" class="form-control" autocomplete="postal-code" />
+                        <span asp-validation-for="Order.ZipCode" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+                <h2 class="h5 mb-3">Payment</h2>
+                <div class="mb-3">
+                    <label asp-for="Order.PaymentMethod" class="form-label">Payment method</label>
+                    <select asp-for="Order.PaymentMethod" class="form-select">
+                        <option value="1">Credit card</option>
+                        <option value="2">Debit card</option>
+                        <option value="3">PayPal</option>
+                    </select>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Order.CardName" class="form-label"></label>
+                        <input asp-for="Order.CardName" class="form-control" autocomplete="cc-name" />
+                        <span asp-validation-for="Order.CardName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Order.CardNumber" class="form-label"></label>
+                        <input asp-for="Order.CardNumber" class="form-control" autocomplete="cc-number" />
+                        <span asp-validation-for="Order.CardNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Order.Expiration" class="form-label"></label>
+                        <input asp-for="Order.Expiration" class="form-control" placeholder="MM/YY" autocomplete="cc-exp" />
+                        <span asp-validation-for="Order.Expiration" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Order.CVV" class="form-label"></label>
+                        <input asp-for="Order.CVV" class="form-control" autocomplete="cc-csc" />
+                        <span asp-validation-for="Order.CVV" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top p-4 text-end">
+                <button class="btn btn-success btn-lg" type="submit">Place order</button>
+            </div>
+        </form>
+    </section>
+
+    <aside class="col-lg-4">
+        <div class="card border-0 bg-light sticky-lg-top checkout-summary">
+            <div class="card-body p-4">
+                <h2 class="h5">Order summary</h2>
+                <ul class="list-group list-group-flush bg-transparent">
+                    @foreach (var item in Model.Cart.Items)
+                    {
+                        <li class="list-group-item bg-transparent px-0 d-flex justify-content-between gap-3">
+                            <span>@item.ProductName × @item.Quantity</span>
+                            <strong>@((item.Price * item.Quantity).ToString("C"))</strong>
+                        </li>
+                    }
+                </ul>
+                <div class="d-flex justify-content-between border-top pt-3 mt-2 fs-5">
+                    <span>Total</span>
+                    <strong>@Model.Cart.TotalPrice.ToString("C")</strong>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

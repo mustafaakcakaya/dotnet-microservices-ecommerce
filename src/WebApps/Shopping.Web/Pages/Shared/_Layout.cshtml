@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EShop</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-semibold" asp-page="/Index">EShop</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation"
+                        aria-controls="mainNavigation" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNavigation">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link" asp-page="/Index">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-page="/ProductList">Products</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-page="/OrderList">Orders</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-page="/Contact">Contact</a></li>
+                    </ul>
+                    <a class="btn btn-success" asp-page="/Cart">Cart</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container flex-grow-1 py-4">
+        @RenderBody()
+    </main>
+
+    <footer class="border-top bg-light py-4 mt-auto">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 text-secondary">
+            <span>&copy; @DateTime.UtcNow.Year EShop</span>
+            <span>Catalog, basket and ordering through YARP</span>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
