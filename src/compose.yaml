@@ -251,7 +251,29 @@ services:
       messagebroker:
         condition: service_healthy
     ports:
+      - "6005:8080"
+
+  yarpapigateway:
+    container_name: YarpApiGateway
+    image: ${DOCKER_REGISTRY-}yarpapigateway
+    build:
+      context: .
+      dockerfile: ApiGateways/YarpApiGateway/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/yarp-api-gateway.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=yarp_gateway_dev_cert_password
+    depends_on:
+      - catalog.api
+      - basket.api
+      - ordering.api
+    ports:
       - "6004:8080"
+      - "6064:8081"
+    volumes:
+      - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
+      - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
 
 volumes:
   postgres_catalog:
