@@ -1,18 +1,41 @@
 # dotnet-microservices-ecommerce
 
-A .NET 8 microservices sample that splits an e-commerce domain across four services.
-Each service owns its data and uses the persistence technology that fits its problem;
-services talk to each other both synchronously (gRPC) and asynchronously (message broker).
+A .NET 8 microservices sample that splits an e-commerce domain across four services behind an
+API gateway, with a Razor Pages storefront in front of it. Each service owns its data and uses
+the persistence technology that fits its problem; services talk to each other both synchronously
+(gRPC) and asynchronously (message broker).
 
-## Services
+## Components
 
-| Service | Responsibility | Persistence | Notable |
+| Component | Responsibility | Persistence | Notable |
 | --- | --- | --- | --- |
+| **Shopping.Web** | Storefront (Razor Pages) | — | Talks only to the gateway, never to a service directly |
+| **YarpApiGateway** | Single entry point | — | YARP reverse proxy, fixed-window rate limiting on ordering |
 | **Catalog.API** | Product catalog | PostgreSQL (Marten, document DB) | Vertical slices, Carter modules |
-| **Basket.API** | Shopping basket | PostgreSQL (Marten) + Redis | Cache-aside decorator, gRPC call to Discount |
+| **Basket.API** | Shopping basket | PostgreSQL (Marten) + Redis | Cache-aside decorator, gRPC call to Discount, publishes checkout |
 | **Discount.Grpc** | Discount coupons | SQLite (EF Core) | gRPC service |
-| **Ordering** | Order lifecycle | SQL Server (EF Core) | Clean Architecture + DDD, outbox + CDC |
+| **Ordering.API** | Order lifecycle | SQL Server (EF Core) | Clean Architecture + DDD, outbox + CDC, feature flags |
 | **Ordering.Worker** | Publishes outbox messages | — | SQL Server CDC reader, BackgroundService |
+
+## Request and message flow
+
+```
+Shopping.Web ──► YarpApiGateway ──┬──► Catalog.API
+                                  ├──► Basket.API ──gRPC──► Discount.Grpc
+                                  └──► Ordering.API            (rate limited)
+
+Basket.API ──BasketCheckoutEvent──► broker ──► Ordering.API (consumer)
+                                                    │
+                                                    ▼ creates the order
+                                         outbox row in the same transaction
+                                                    │
+                                          CDC ──► Ordering.Worker ──► broker
+```
+
+Checkout is asynchronous: Basket publishes a `BasketCheckoutEvent`, Ordering consumes it and
+turns it into a `CreateOrderCommand`. Ordering then publishes its own events back out through the
+outbox, so the two directions use different mechanisms for different reasons - the checkout is a
+fire-and-forget hand-off, while order events must not be lost.
 
 ## Architectural approaches
 
@@ -33,16 +56,21 @@ pipeline behaviours: `ValidationBehaviour` (FluentValidation) and `LoggingBehavi
 **Vertical slices with Carter.** Each feature keeps its endpoint, command or query, handler and
 validator together in one folder - organised by feature rather than by layer.
 
-**Transactional Outbox with Change Data Capture.** The critical part of Ordering. The aggregate
-change and the message to be published are written in the **same SQL transaction**; no broker
-call happens inside that transaction. A separate worker reads the committed outbox rows through
-SQL Server CDC and publishes them. Details below.
+**Transactional Outbox with Change Data Capture.** The aggregate change and the message to be
+published are written in the **same SQL transaction**; no broker call happens inside that
+transaction. A separate worker reads the committed outbox rows through SQL Server CDC and
+publishes them. Details below.
 
 **Domain events versus integration events.** Domain events stay inside the service, dispatched
-in-process through MediatR. Only explicitly defined, versioned **integration events** leave it
-(`BuildingBlocks.Messaging`). Domain and EF entities are never serialized; a payload carries
-only the fields other services actually need, and sensitive payment data - card number, CVV -
-never reaches the outbox, the logs or the broker.
+in-process through MediatR (`Orders/EventHandlers/Domain`). Integration events cross the service
+boundary and are explicit, versioned contracts in `BuildingBlocks.Messaging`; the ones Ordering
+consumes live in `Orders/EventHandlers/Integration`. Domain and EF entities are never serialized.
+
+**Feature flags.** `Microsoft.FeatureManagement` gates order fulfillment. With
+`FeatureManagement:OrderFulfillment` off, orders are still created and stored, but
+`OrderCreatedIntegrationEvent` is not written to the outbox - so nothing downstream reacts. The
+switch sits at the outbox write rather than at the publisher, which keeps the decision inside the
+transaction that creates the order.
 
 ## Ordering: outbox to CDC to broker
 
@@ -84,6 +112,19 @@ rather than skipping silently.
 `ConsumerName` would produce duplicates and could move the checkpoint backwards. The lease design
 needed for horizontal scaling: [ADR 0002](docs/adr/0002-cdc-worker-single-instance.md).
 
+## Handling of payment data
+
+`OrderCreatedIntegrationEvent` carries only what other services need - no address, no payment -
+so card numbers never reach the outbox, and `LoggingBehaviour` logs contract names rather than
+request contents for the same reason.
+
+**`BasketCheckoutEvent` is the exception and it is a known problem:** it carries `CardNumber`,
+`Expiration` and `CVV` in clear text over the broker, because Ordering needs them to build the
+`Payment` value object. Anything with access to the broker, its queues or its logs can read them.
+Storing card data at rest in `dbo.Orders` has the same issue. This is not acceptable for anything
+handling real cards; the fix is to keep payment details out of the message entirely - a payment
+service holding a token the event refers to.
+
 ## Message broker: RabbitMQ or Kafka
 
 The broker is chosen by configuration, with no code change:
@@ -102,7 +143,8 @@ The broker is chosen by configuration, with no code change:
   `acks=all` enabled.
 
 The only broker-aware code is the two implementations of `IIntegrationEventPublisher`; nothing
-above that layer knows which broker is in use.
+above that layer knows which broker is in use. Kafka currently covers the outbox publish path;
+the checkout hand-off between Basket and Ordering goes through MassTransit.
 
 ## Running
 
@@ -117,8 +159,21 @@ without SQL Server Agent**. CDC and the worker's tables are created by EF migrat
 `EnableOutboxCdc` migration uses `suppressTransaction: true`, because `sp_cdc_enable_db` refuses
 to run inside a transaction.
 
-Ports: Catalog `6000`, Basket `6001`, Discount `6002`, Ordering.Worker `6003`,
-RabbitMQ management UI `15672`, Kafka `29092`.
+| Endpoint | Port |
+| --- | --- |
+| Shopping.Web (storefront) | `6005` |
+| YarpApiGateway | `6004` |
+| Catalog.API | `6000` |
+| Basket.API | `6001` |
+| Discount.Grpc | `6002` |
+| Ordering.API | `6003` |
+| Ordering.Worker (health) | `6006` |
+| RabbitMQ management UI | `15672` |
+| Kafka | `29092` |
+
+Everything a browser touches goes through the gateway: `/catalog-service/...`,
+`/basket-service/...`, `/ordering-service/...`. The ordering route is rate limited to 5 requests
+per 10 second window.
 
 ## Tests
 
@@ -134,7 +189,8 @@ dotnet test tests/Services/Ordering/Ordering.IntegrationTests   # requires Docke
 The integration tests start a **real SQL Server with CDC enabled** and a **real Kafka** through
 Testcontainers. They apply the migrations from scratch and verify that an order and its outbox
 row commit atomically, that the CDC pipeline delivers, that the checkpoint does not advance when
-the broker fails, and that consumers are idempotent.
+the broker fails, that a disabled feature flag keeps the outbox row from being written, and that
+consumers are idempotent.
 
 ## Shared libraries
 
