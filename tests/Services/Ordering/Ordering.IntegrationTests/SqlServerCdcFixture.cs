@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.FeatureManagement;
 using Ordering.Infrastructure.Data;
 using Ordering.Infrastructure.Data.Interceptors;
 using Ordering.Worker.Data;
@@ -49,7 +50,7 @@ public sealed class SqlServerCdcFixture : IAsyncLifetime
         await context.Database.MigrateAsync();
     }
 
-    public ApplicationDbContext CreateDbContext()
+    public ApplicationDbContext CreateDbContext(IFeatureManager? featureManager = null)
     {
         var mediator = _serviceProvider.GetRequiredService<IMediator>();
 
@@ -57,7 +58,7 @@ public sealed class SqlServerCdcFixture : IAsyncLifetime
             .UseSqlServer(ConnectionString)
             .AddInterceptors(
                 new AuditableEntityInterceptor(),
-                new DispatchDomainEventsInterceptor(mediator))
+                new DispatchDomainEventsInterceptor(mediator, featureManager))
             .Options;
 
         return new ApplicationDbContext(options);

@@ -1,6 +1,10 @@
 using System.Diagnostics;
 using MediatR;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.FeatureManagement;
+using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Ordering.V1;
+using Ordering.Application.Features;
 using Ordering.Application.Orders.IntegrationEvents;
 using Ordering.Infrastructure.Outbox;
 
@@ -15,7 +19,9 @@ namespace Ordering.Infrastructure.Data.Interceptors;
 /// No external side effect (broker publish) happens here; the CDC worker picks
 /// up committed outbox rows and publishes them to the message broker.
 /// </summary>
-public class DispatchDomainEventsInterceptor(IMediator mediator) : SaveChangesInterceptor
+public class DispatchDomainEventsInterceptor(
+    IMediator mediator,
+    IFeatureManager? featureManager = null) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
@@ -57,12 +63,22 @@ public class DispatchDomainEventsInterceptor(IMediator mediator) : SaveChangesIn
         foreach (var domainEvent in domainEvents)
         {
             var mapped = OrderIntegrationEventMapper.Map(domainEvent, correlationId);
-            if (mapped is not null)
+            if (mapped is not null && await ShouldWriteToOutbox(mapped.Event))
             {
                 context.Set<OutboxMessage>().Add(OutboxMessage.From(mapped.Event, mapped.AggregateId));
             }
 
             await mediator.Publish(domainEvent);
         }
+    }
+
+    private async Task<bool> ShouldWriteToOutbox(IntegrationEvent integrationEvent)
+    {
+        if (integrationEvent is not OrderCreatedIntegrationEvent || featureManager is null)
+        {
+            return true;
+        }
+
+        return await featureManager.IsEnabledAsync(OrderingFeatures.OrderFulfillment);
     }
 }

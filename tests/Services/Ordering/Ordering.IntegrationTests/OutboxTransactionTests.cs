@@ -1,4 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.FeatureManagement;
+using Ordering.Application.Features;
 using Ordering.Domain.ValueObjects;
 
 namespace Ordering.IntegrationTests;
@@ -62,6 +66,38 @@ public sealed class OutboxTransactionTests(SqlServerCdcFixture fixture) : IAsync
         Assert.Null(await verification.Orders.FindAsync(orderId));
         Assert.Empty(await verification.OutboxMessages
             .Where(m => m.AggregateId == orderId.Value.ToString())
+            .ToListAsync());
+    }
+
+    [Fact]
+    public async Task CreatingOrder_WhenFulfillmentIsDisabled_DoesNotWriteOrderCreatedOutboxMessage()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"FeatureManagement:{OrderingFeatures.OrderFulfillment}"] = "false"
+            })
+            .Build();
+
+        await using var featureProvider = new ServiceCollection()
+            .AddSingleton<IConfiguration>(configuration)
+            .AddFeatureManagement()
+            .Services
+            .BuildServiceProvider();
+
+        var featureManager = featureProvider.GetRequiredService<IFeatureManager>();
+
+        await using var context = fixture.CreateDbContext(featureManager);
+        var (customer, product) = await TestOrders.SeedReferenceDataAsync(context);
+
+        var order = TestOrders.NewOrder(customer.Id, product.Id);
+        context.Orders.Add(order);
+        await context.SaveChangesAsync();
+
+        await using var verification = fixture.CreateDbContext();
+        Assert.NotNull(await verification.Orders.FindAsync(order.Id));
+        Assert.Empty(await verification.OutboxMessages
+            .Where(message => message.AggregateId == order.Id.Value.ToString())
             .ToListAsync());
     }
 }

@@ -7,6 +7,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Services/Ordering/Ordering.Worker/Ordering.Worker.csproj", "Services/Ordering/Ordering.Worker/"]
+COPY ["BuildingBlocks/BuildingBlocks.Messaging/BuildingBlocks.Messaging.csproj", "BuildingBlocks/BuildingBlocks.Messaging/"]
 RUN dotnet restore "Services/Ordering/Ordering.Worker/Ordering.Worker.csproj"
 COPY . .
 WORKDIR "/src/Services/Ordering/Ordering.Worker"

@@ -159,6 +159,10 @@ services:
       - ConnectionStrings__Database=Server=basketdb;Port=5432;Database=BasketDb;User Id=postgres;Password=postgres;Include Error Detail=true
       - ConnectionStrings__Redis=distributedcache:6379
       - GrpcSettings__DiscountUrl=http://discount.grpc:8080
+      - MessageBroker__Provider=RabbitMq
+      - MessageBroker__RabbitMq__Host=amqp://messagebroker:5672
+      - MessageBroker__RabbitMq__UserName=guest
+      - MessageBroker__RabbitMq__Password=guest
     depends_on:
       basketdb:
         condition: service_healthy
@@ -166,6 +170,8 @@ services:
         condition: service_healthy
       discount.grpc:
         condition: service_started
+      messagebroker:
+        condition: service_healthy
     ports:
       - "6001:8080"
       - "6061:8081"
@@ -188,6 +194,35 @@ services:
     ports:
       - "6002:8080"
       - "6062:8081"
+    volumes:
+      - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
+      - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
+
+  ordering.api:
+    container_name: Ordering.API
+    image: ${DOCKER_REGISTRY-}orderingapi
+    build:
+      context: .
+      dockerfile: Services/Ordering/Ordering.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://0.0.0.0:8081;http://0.0.0.0:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/ordering-api.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=ordering_dev_cert_password
+      - ConnectionStrings__Database=Server=orderdb;Database=OrderDb;User Id=sa;Password=SwN12345678;Encrypt=False;TrustServerCertificate=True
+      - MessageBroker__Provider=RabbitMq
+      - MessageBroker__RabbitMq__Host=amqp://messagebroker:5672
+      - MessageBroker__RabbitMq__UserName=guest
+      - MessageBroker__RabbitMq__Password=guest
+      - FeatureManagement__OrderFulfillment=false
+    depends_on:
+      orderdb:
+        condition: service_healthy
+      messagebroker:
+        condition: service_healthy
+    ports:
+      - "6003:8080"
+      - "6063:8081"
     volumes:
       - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
       - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
@@ -216,7 +251,7 @@ services:
       messagebroker:
         condition: service_healthy
     ports:
-      - "6003:8080"
+      - "6004:8080"
 
 volumes:
   postgres_catalog:
