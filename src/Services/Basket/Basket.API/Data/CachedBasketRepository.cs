@@ -1,4 +1,5 @@
 using System.Text.Json;
+using BuildingBlocks.Messaging.Events;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
@@ -81,6 +82,35 @@ public class CachedBasketRepository
         logger.LogInformation("Cache REMOVE for basket {UserName}", userName);
 
         return true;
+    }
+
+    /// <summary>
+    /// Checks out through the database, then evicts the cached basket.
+    /// Unlike <see cref="DeleteBasket"/>, a failed eviction is logged rather than
+    /// surfaced: the checkout has already committed and the order is on its way,
+    /// so reporting an error would tell the user it failed when it did not. The
+    /// stale entry cannot cause a second order either, because checkout reads the
+    /// basket from the database, where it no longer exists.
+    /// </summary>
+    public async Task<BasketCheckoutEvent> CheckoutBasket(
+        BasketCheckoutEvent draft,
+        CancellationToken cancellationToken = default)
+    {
+        var checkoutEvent = await basketRepository.CheckoutBasket(draft, cancellationToken);
+
+        try
+        {
+            await cache.RemoveAsync(draft.UserName, cancellationToken);
+            logger.LogInformation("Cache REMOVE for checked out basket {UserName}", draft.UserName);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception,
+                "Cache REMOVE failed for checked out basket {UserName}; the entry expires with its TTL",
+                draft.UserName);
+        }
+
+        return checkoutEvent;
     }
 
     private async Task<ShoppingCart?> TryGetCachedAsync(string userName, CancellationToken cancellationToken)

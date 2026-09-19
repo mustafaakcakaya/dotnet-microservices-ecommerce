@@ -1,5 +1,4 @@
 using BuildingBlocks.Messaging.Events;
-using MassTransit;
 
 namespace Basket.API.Basket.CheckoutBasket;
 
@@ -22,32 +21,23 @@ public class CheckoutBasketCommandValidator : AbstractValidator<CheckoutBasketCo
     }
 }
 
-public class CheckoutBasketCommandHandler(
-    IBasketRepository repository,
-    IPublishEndpoint publishEndpoint)
+/// <summary>
+/// Records the checkout; it does not publish anything. Publishing used to happen
+/// here, followed by deleting the basket - two separate writes, so a crash in
+/// between sent the event and kept the basket, and the next checkout created a
+/// second order. The basket deletion and the event now commit together in the
+/// outbox, and the outbox relay publishes the event afterwards.
+/// </summary>
+public class CheckoutBasketCommandHandler(IBasketRepository repository)
     : ICommandHandler<CheckoutBasketCommand, CheckoutBasketResult>
 {
     public async Task<CheckoutBasketResult> Handle(
         CheckoutBasketCommand command,
         CancellationToken cancellationToken)
     {
-        var basket = await repository.GetBasket(
-            command.BasketCheckoutDto.UserName,
-            cancellationToken);
+        var draft = command.BasketCheckoutDto.Adapt<BasketCheckoutEvent>();
 
-        if (basket is null)
-        {
-            return new CheckoutBasketResult(false);
-        }
-
-        var eventMessage = command.BasketCheckoutDto.Adapt<BasketCheckoutEvent>();
-        eventMessage.TotalPrice = basket.TotalPrice;
-
-        await publishEndpoint.Publish(eventMessage, cancellationToken);
-
-        await repository.DeleteBasket(
-            command.BasketCheckoutDto.UserName,
-            cancellationToken);
+        await repository.CheckoutBasket(draft, cancellationToken);
 
         return new CheckoutBasketResult(true);
     }

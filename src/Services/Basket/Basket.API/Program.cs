@@ -1,4 +1,7 @@
+using Basket.API.Outbox;
 using BuildingBlocks.Messaging;
+using BuildingBlocks.Messaging.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +18,10 @@ builder.Services.AddMediatR(config =>
 });
 
 builder.Services.AddMarten(opts =>
-{
-    opts.Connection(builder.Configuration.GetConnectionString("Database")!);
-    opts.Schema.For<ShoppingCart>().Identity(x => x.UserName);
-}).UseLightweightSessions();
+    BasketStoreConfiguration.Configure(opts, builder.Configuration.GetConnectionString("Database")!))
+    .UseLightweightSessions();
+
+builder.Services.TryAddSingleton(TimeProvider.System);
 
 builder.Services.AddScoped<BasketRepository>();
 // A missing or malformed value falls back to the default rather than caching forever.
@@ -46,6 +49,25 @@ builder.Services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>(
 
 // Async communication services
 builder.Services.AddMessageBroker(builder.Configuration);
+
+// Ordering consumes the checkout with a MassTransit consumer, so Basket must
+// publish through MassTransit. Fail at startup rather than publish into Kafka
+// where nothing is listening.
+var brokerProvider = builder.Configuration.GetValue<MessageBrokerProvider?>("MessageBroker:Provider")
+                     ?? MessageBrokerProvider.RabbitMq;
+if (brokerProvider != MessageBrokerProvider.RabbitMq)
+{
+    throw new InvalidOperationException(
+        $"Basket.API publishes checkouts through MassTransit, which Ordering consumes; " +
+        $"MessageBroker:Provider must be {MessageBrokerProvider.RabbitMq}, not {brokerProvider}.");
+}
+
+// Checkout writes to the outbox; the relay publishes from it.
+builder.Services.Configure<BasketOutboxOptions>(
+    builder.Configuration.GetSection(BasketOutboxOptions.SectionName));
+builder.Services.AddSingleton<ICheckoutEventPublisher, MassTransitCheckoutEventPublisher>();
+builder.Services.AddSingleton<BasketOutboxProcessor>();
+builder.Services.AddHostedService<BasketOutboxRelay>();
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
