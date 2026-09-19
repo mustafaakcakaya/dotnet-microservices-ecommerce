@@ -203,4 +203,5 @@ consumers are idempotent.
 
 - [ADR 0001 - Delivery guarantees: at-least-once and consumer idempotency](docs/adr/0001-outbox-cdc-delivery-guarantees.md)
 - [ADR 0002 - Single CDC worker instance](docs/adr/0002-cdc-worker-single-instance.md)
+- [ADR 0003 - Checkout published through a transactional outbox](docs/adr/0003-basket-checkout-outbox.md)
 - [Ordering.Worker runbook](src/Services/Ordering/Ordering.Worker/README.md)
