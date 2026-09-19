@@ -60,6 +60,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebApps", "WebApps", "{0AB3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.Web", "WebApps\Shopping.Web\Shopping.Web.csproj", "{6CFC80BE-E6C4-4CF1-987E-6C5FC4CE107B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Basket.API.IntegrationTests", "..\tests\Services\Basket\Basket.API.IntegrationTests\Basket.API.IntegrationTests.csproj", "{79FC80E3-0048-46DB-A898-92F6037E9B5D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -157,5 +159,9 @@ Global
 		{6CFC80BE-E6C4-4CF1-987E-6C5FC4CE107B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6CFC80BE-E6C4-4CF1-987E-6C5FC4CE107B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6CFC80BE-E6C4-4CF1-987E-6C5FC4CE107B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79FC80E3-0048-46DB-A898-92F6037E9B5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79FC80E3-0048-46DB-A898-92F6037E9B5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79FC80E3-0048-46DB-A898-92F6037E9B5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79FC80E3-0048-46DB-A898-92F6037E9B5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
