@@ -1,7 +1,10 @@
+using System.Net;
+
 namespace Shopping.Web.Pages;
 
 public class CheckoutModel(
     IBasketService basketService,
+    IPaymentService paymentService,
     IShopperContext shopper,
     ILogger<CheckoutModel> logger) : PageModel
 {
@@ -30,13 +33,42 @@ public class CheckoutModel(
             return Page();
         }
 
-        Order.CustomerId = shopper.CustomerId;
-        Order.UserName = shopper.UserName;
-        Order.TotalPrice = Cart.TotalPrice;
+        // The card goes to the Payment service only; Basket gets the token.
+        TokenizeCardResponse card;
+        try
+        {
+            card = await paymentService.TokenizeCard(
+                new TokenizeCardRequest(
+                    shopper.CustomerId,
+                    Order.CardName,
+                    Order.CardNumber,
+                    Order.Expiration,
+                    Order.CVV),
+                cancellationToken);
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
+        {
+            ModelState.AddModelError(string.Empty, "The card details were not accepted. Please check them.");
+            return Page();
+        }
+
+        var checkout = new BasketCheckoutDto(
+            shopper.UserName,
+            shopper.CustomerId,
+            Order.FirstName,
+            Order.LastName,
+            Order.EmailAddress,
+            Order.AddressLine,
+            Order.Country,
+            Order.State,
+            Order.ZipCode,
+            card.PaymentToken,
+            card.CardLast4,
+            Order.PaymentMethod);
 
         logger.LogInformation("Submitting checkout for shopper {UserName}", shopper.UserName);
         var response = await basketService.CheckoutBasket(
-            new CheckoutBasketRequest(Order),
+            new CheckoutBasketRequest(checkout),
             cancellationToken);
 
         if (!response.IsSuccess)

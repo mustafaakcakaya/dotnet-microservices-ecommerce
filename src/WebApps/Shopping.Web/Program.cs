@@ -24,6 +24,9 @@ builder.Services.AddRefitClient<IBasketService>()
 builder.Services.AddRefitClient<IOrderingService>()
     .ConfigureHttpClient(client => client.BaseAddress = new Uri(gatewayAddress));
 
+builder.Services.AddRefitClient<IPaymentService>()
+    .ConfigureHttpClient(client => client.BaseAddress = new Uri(gatewayAddress));
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

@@ -22,10 +22,8 @@ public sealed record AddressModel(
     string ZipCode);
 
 public sealed record PaymentModel(
-    string CardName,
-    string CardNumber,
-    string Expiration,
-    string Cvv,
+    string PaymentToken,
+    string CardLast4,
     int PaymentMethod);
 
 public enum OrderStatus
