@@ -1,5 +1,5 @@
 using Basket.API.Outbox;
-using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Basket.V1;
 
 namespace Basket.API.Data;
 
@@ -30,8 +30,8 @@ public class BasketRepository(IDocumentSession session, TimeProvider timeProvide
         return true;
     }
 
-    public async Task<BasketCheckoutEvent> CheckoutBasket(
-        BasketCheckoutEvent draft,
+    public async Task<BasketCheckoutSubmittedIntegrationEvent> CheckoutBasket(
+        BasketCheckoutSubmittedIntegrationEvent draft,
         CancellationToken cancellationToken = default)
     {
         // Always read from the database, never the cache: a stale cached basket
@@ -39,19 +39,33 @@ public class BasketRepository(IDocumentSession session, TimeProvider timeProvide
         var basket = await session.LoadAsync<ShoppingCart>(draft.UserName, cancellationToken)
                      ?? throw new BasketNotFoundException(draft.UserName);
 
-        var metadata = await session.MetadataForAsync(basket, cancellationToken);
-        var basketVersion = metadata?.CurrentVersion ?? Guid.Empty;
+        if (basket.Items.Count == 0)
+        {
+            throw new BadRequestException($"Basket of {draft.UserName} is empty and cannot be checked out.");
+        }
 
+        // No metadata means a concurrent checkout deleted the basket after it was
+        // loaded above. Falling back to an empty version would derive a different
+        // id and record a second checkout of the same basket.
+        var metadata = await session.MetadataForAsync(basket, cancellationToken)
+                       ?? throw new BasketNotFoundException(draft.UserName);
+        var basketVersion = metadata.CurrentVersion;
+
+        // The lines and the total come from the basket as stored, not from the
+        // request, so the order is built from what was actually checked out.
         var now = timeProvider.GetUtcNow();
         var checkoutEvent = draft with
         {
             Id = CheckoutId.For(draft.UserName, basketVersion),
             OccurredOnUtc = now.UtcDateTime,
-            TotalPrice = basket.TotalPrice
+            TotalPrice = basket.TotalPrice,
+            Items = basket.Items
+                .Select(item => new BasketCheckoutLine(item.ProductId, item.ProductName, item.Quantity, item.Price))
+                .ToList()
         };
 
         session.Delete<ShoppingCart>(draft.UserName);
-        session.Store(BasketOutboxMessage.For(checkoutEvent, now));
+        session.Store(BasketOutboxMessage.For(checkoutEvent, draft.UserName, now));
 
         // One SaveChanges, one database transaction: the basket disappears if and
         // only if the event is recorded.

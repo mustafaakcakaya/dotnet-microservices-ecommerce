@@ -2,7 +2,7 @@ using System.Text;
 using Basket.API.Data;
 using Basket.API.Exceptions;
 using Basket.API.Models;
-using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Basket.V1;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace Basket.API.UnitTests.Data;
@@ -42,9 +42,9 @@ internal sealed class FakeBasketRepository : IBasketRepository
         return Task.FromResult(true);
     }
 
-    public List<BasketCheckoutEvent> CheckedOut { get; } = [];
+    public List<BasketCheckoutSubmittedIntegrationEvent> CheckedOut { get; } = [];
 
-    public Task<BasketCheckoutEvent> CheckoutBasket(BasketCheckoutEvent draft, CancellationToken cancellationToken = default)
+    public Task<BasketCheckoutSubmittedIntegrationEvent> CheckoutBasket(BasketCheckoutSubmittedIntegrationEvent draft, CancellationToken cancellationToken = default)
     {
         if (!_baskets.Remove(draft.UserName, out var basket))
         {

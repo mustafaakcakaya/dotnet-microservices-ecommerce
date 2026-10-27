@@ -1,3 +1,4 @@
+using BuildingBlocks.Messaging.Publishing;
 using Microsoft.Extensions.Options;
 
 namespace Basket.API.Outbox;
@@ -10,8 +11,8 @@ public sealed record BasketOutboxResult(int Published, int Failed, int Poisoned)
 /// Delivery is at-least-once. A message is deleted only after it was published,
 /// so a crash in between republishes it with the same MessageId, and the
 /// consumer's inbox drops the duplicate. Deleting instead of marking it as sent
-/// is deliberate: the event carries payment details, and nothing is gained by
-/// keeping them at rest once the event is out.
+/// is deliberate: the event carries names and addresses, and nothing is gained by
+/// keeping customer details at rest once the event is out.
 ///
 /// No publish timeout is applied. While the broker is down MassTransit waits for
 /// the connection rather than failing, so an outage stalls the relay instead of
@@ -21,7 +22,7 @@ public sealed record BasketOutboxResult(int Published, int Failed, int Poisoned)
 /// </summary>
 public sealed class BasketOutboxProcessor(
     IDocumentStore store,
-    ICheckoutEventPublisher publisher,
+    IIntegrationEventPublisher publisher,
     IOptions<BasketOutboxOptions> options,
     TimeProvider timeProvider,
     ILogger<BasketOutboxProcessor> logger)
@@ -49,7 +50,7 @@ public sealed class BasketOutboxProcessor(
 
             try
             {
-                await publisher.PublishAsync(message.Message, cancellationToken);
+                await publisher.PublishAsync(message.Envelope, cancellationToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -72,7 +73,7 @@ public sealed class BasketOutboxProcessor(
 
             logger.LogInformation(
                 "Published checkout {MessageId} for {UserName}",
-                message.Id, message.Message.UserName);
+                message.Id, message.Envelope.AggregateId);
         }
 
         return new BasketOutboxResult(published, failed, poisoned);

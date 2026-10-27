@@ -1,7 +1,7 @@
 using Basket.API.Data;
 using Basket.API.Exceptions;
 using Basket.API.Models;
-using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Basket.V1;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Basket.API.UnitTests.Data;
@@ -26,7 +26,7 @@ public sealed class CachedBasketRepositoryCheckoutTests
         _inner.Seed(BasketWith(UserName, price: 100));
         await repository.GetBasket(UserName); // populates the cache
 
-        await repository.CheckoutBasket(new BasketCheckoutEvent { UserName = UserName });
+        await repository.CheckoutBasket(TestCheckouts.Draft(UserName));
 
         Assert.False(_cache.Contains(UserName));
     }
@@ -37,7 +37,7 @@ public sealed class CachedBasketRepositoryCheckoutTests
         _inner.Seed(BasketWith(UserName, price: 250));
 
         var checkoutEvent = await CreateRepository()
-            .CheckoutBasket(new BasketCheckoutEvent { UserName = UserName });
+            .CheckoutBasket(TestCheckouts.Draft(UserName));
 
         Assert.Equal(250, checkoutEvent.TotalPrice);
     }
@@ -51,7 +51,7 @@ public sealed class CachedBasketRepositoryCheckoutTests
         _cache.FailRemovals = true;
 
         var checkoutEvent = await CreateRepository()
-            .CheckoutBasket(new BasketCheckoutEvent { UserName = UserName });
+            .CheckoutBasket(TestCheckouts.Draft(UserName));
 
         Assert.Equal(UserName, checkoutEvent.UserName);
         Assert.Single(_inner.CheckedOut);
@@ -61,7 +61,7 @@ public sealed class CachedBasketRepositoryCheckoutTests
     public async Task CheckoutBasket_WhenNoBasket_Throws()
     {
         await Assert.ThrowsAsync<BasketNotFoundException>(
-            () => CreateRepository().CheckoutBasket(new BasketCheckoutEvent { UserName = UserName }));
+            () => CreateRepository().CheckoutBasket(TestCheckouts.Draft(UserName)));
     }
 
     private static ShoppingCart BasketWith(string userName, decimal price) => new(userName)

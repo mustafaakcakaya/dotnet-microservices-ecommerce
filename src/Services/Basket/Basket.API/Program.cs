@@ -65,7 +65,6 @@ if (brokerProvider != MessageBrokerProvider.RabbitMq)
 // Checkout writes to the outbox; the relay publishes from it.
 builder.Services.Configure<BasketOutboxOptions>(
     builder.Configuration.GetSection(BasketOutboxOptions.SectionName));
-builder.Services.AddSingleton<ICheckoutEventPublisher, MassTransitCheckoutEventPublisher>();
 builder.Services.AddSingleton<BasketOutboxProcessor>();
 builder.Services.AddHostedService<BasketOutboxRelay>();
 

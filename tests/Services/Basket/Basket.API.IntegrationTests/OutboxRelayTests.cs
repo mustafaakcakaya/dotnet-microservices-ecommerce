@@ -1,5 +1,7 @@
 using Basket.API.Outbox;
 using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Basket.V1;
+using BuildingBlocks.Messaging.Publishing;
 using Marten;
 using MassTransit;
 using MassTransit.Testing;
@@ -19,7 +21,7 @@ public sealed class OutboxRelayTests(PostgresFixture fixture) : IAsyncLifetime
 
     public Task DisposeAsync() => fixture.Store.Advanced.Clean.DeleteAllDocumentsAsync();
 
-    private BasketOutboxProcessor CreateProcessor(ICheckoutEventPublisher? publisher = null) => new(
+    private BasketOutboxProcessor CreateProcessor(IIntegrationEventPublisher? publisher = null) => new(
         fixture.Store,
         publisher ?? _publisher,
         Options.Create(_options),
@@ -137,10 +139,11 @@ public sealed class OutboxRelayTests(PostgresFixture fixture) : IAsyncLifetime
         Assert.Equal(good.Id, Assert.Single(publisher.Published).Id);
     }
 
-    // The real publisher, through MassTransit: the outbox id must be what arrives
-    // as the MessageId, because that is the key Ordering's inbox deduplicates on.
+    // The shared publisher, through MassTransit: the envelope must come out as the
+    // versioned contract Ordering consumes, with the outbox id as the MessageId -
+    // the key Ordering's inbox deduplicates on.
     [Fact]
-    public async Task MassTransitPublisher_SendsTheOutboxIdAsMessageId()
+    public async Task SharedPublisher_SendsTheContractWithTheOutboxIdAsMessageId()
     {
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness()
@@ -151,14 +154,16 @@ public sealed class OutboxRelayTests(PostgresFixture fixture) : IAsyncLifetime
         try
         {
             var message = await AddMessageAsync("mustafa");
-            var processor = CreateProcessor(new MassTransitCheckoutEventPublisher(harness.Bus));
+            var processor = CreateProcessor(
+                new RabbitMqIntegrationEventPublisher(harness.Bus, new IntegrationEventTypeRegistry()));
 
             await processor.ProcessOnceAsync(CancellationToken.None);
 
-            Assert.True(await harness.Published.Any<BasketCheckoutEvent>());
-            var published = harness.Published.Select<BasketCheckoutEvent>().Single();
+            Assert.True(await harness.Published.Any<BasketCheckoutSubmittedIntegrationEvent>());
+            var published = harness.Published.Select<BasketCheckoutSubmittedIntegrationEvent>().Single();
             Assert.Equal(message.Id, published.Context.MessageId);
             Assert.Equal("mustafa", published.Context.Message.UserName);
+            Assert.Equal(100, published.Context.Message.TotalPrice);
         }
         finally
         {
@@ -172,8 +177,12 @@ public sealed class OutboxRelayTests(PostgresFixture fixture) : IAsyncLifetime
         DateTimeOffset? nextAttemptOnUtc = null)
     {
         var now = occurredOnUtc ?? DateTimeOffset.UtcNow;
-        var message = BasketOutboxMessage.For(
-            new BasketCheckoutEvent { UserName = userName, TotalPrice = 100 }, now);
+        var checkout = TestCheckouts.Draft(userName) with
+        {
+            TotalPrice = 100,
+            Items = [new BasketCheckoutLine(Guid.NewGuid(), "iPhone X", 1, 100)]
+        };
+        var message = BasketOutboxMessage.For(checkout, userName, now);
         message.NextAttemptOnUtc = nextAttemptOnUtc ?? now;
 
         await using var session = fixture.Store.LightweightSession();
@@ -197,25 +206,25 @@ public sealed class OutboxRelayTests(PostgresFixture fixture) : IAsyncLifetime
         return await session.Query<BasketOutboxMessage>().ToListAsync();
     }
 
-    private sealed class RecordingPublisher : ICheckoutEventPublisher
+    private sealed class RecordingPublisher : IIntegrationEventPublisher
     {
-        public List<BasketCheckoutEvent> Published { get; } = [];
+        public List<IntegrationEventEnvelope> Published { get; } = [];
         public Exception? FailWith { get; set; }
         public Guid? FailFor { get; init; }
 
-        public Task PublishAsync(BasketCheckoutEvent checkoutEvent, CancellationToken cancellationToken)
+        public Task PublishAsync(IntegrationEventEnvelope envelope, CancellationToken cancellationToken)
         {
             if (FailWith is not null)
             {
                 throw FailWith;
             }
 
-            if (FailFor == checkoutEvent.Id)
+            if (FailFor == envelope.Id)
             {
                 throw new InvalidOperationException("this message is broken (simulated)");
             }
 
-            Published.Add(checkoutEvent);
+            Published.Add(envelope);
             return Task.CompletedTask;
         }
     }

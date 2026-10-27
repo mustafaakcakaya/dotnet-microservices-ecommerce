@@ -1,4 +1,4 @@
-using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Basket.V1;
 
 namespace Basket.API.Basket.CheckoutBasket;
 
@@ -18,6 +18,14 @@ public class CheckoutBasketCommandValidator : AbstractValidator<CheckoutBasketCo
         RuleFor(x => x.BasketCheckoutDto.UserName)
             .NotEmpty()
             .WithMessage("UserName is required");
+
+        RuleFor(x => x.BasketCheckoutDto.PaymentToken)
+            .NotEmpty()
+            .WithMessage("PaymentToken is required; tokenize the card with the Payment service first");
+
+        RuleFor(x => x.BasketCheckoutDto.CardLast4)
+            .Matches("^[0-9]{4}$")
+            .WithMessage("CardLast4 must be four digits");
     }
 }
 
@@ -35,7 +43,25 @@ public class CheckoutBasketCommandHandler(IBasketRepository repository)
         CheckoutBasketCommand command,
         CancellationToken cancellationToken)
     {
-        var draft = command.BasketCheckoutDto.Adapt<BasketCheckoutEvent>();
+        var dto = command.BasketCheckoutDto;
+        var address = new CheckoutAddress(
+            dto.FirstName,
+            dto.LastName,
+            dto.EmailAddress,
+            dto.AddressLine,
+            dto.Country,
+            dto.State,
+            dto.ZipCode);
+
+        // Lines, total and id are filled in by the repository from the stored basket.
+        var draft = new BasketCheckoutSubmittedIntegrationEvent
+        {
+            UserName = dto.UserName,
+            CustomerId = dto.CustomerId,
+            ShippingAddress = address,
+            BillingAddress = address,
+            Payment = new CheckoutPayment(dto.PaymentToken, dto.CardLast4, dto.PaymentMethod)
+        };
 
         await repository.CheckoutBasket(draft, cancellationToken);
 

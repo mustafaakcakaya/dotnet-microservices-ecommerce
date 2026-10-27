@@ -2,7 +2,9 @@ using Basket.API.Data;
 using Basket.API.Exceptions;
 using Basket.API.Models;
 using Basket.API.Outbox;
-using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Exceptions;
+using BuildingBlocks.Messaging.Events.Basket.V1;
+using BuildingBlocks.Messaging.Serialization;
 using Marten;
 
 namespace Basket.API.IntegrationTests;
@@ -26,17 +28,57 @@ public sealed class CheckoutTransactionTests(PostgresFixture fixture) : IAsyncLi
 
         await using var session = fixture.Store.LightweightSession();
         var checkoutEvent = await new BasketRepository(session, TimeProvider.System)
-            .CheckoutBasket(new BasketCheckoutEvent { UserName = "mustafa" });
+            .CheckoutBasket(TestCheckouts.Draft("mustafa"));
 
         await using var verify = fixture.Store.QuerySession();
         Assert.Null(await verify.LoadAsync<ShoppingCart>("mustafa"));
 
         var outbox = Assert.Single(await verify.Query<BasketOutboxMessage>().ToListAsync());
         Assert.Equal(checkoutEvent.Id, outbox.Id);
-        Assert.Equal(checkoutEvent.Id, outbox.Message.Id);
-        Assert.Equal(900, outbox.Message.TotalPrice);
+        Assert.Equal(checkoutEvent.Id, outbox.Envelope.Id);
+        Assert.Equal("basket.checkout-submitted", outbox.Envelope.EventType);
+        Assert.Equal(1, outbox.Envelope.SchemaVersion);
+        Assert.Equal("mustafa", outbox.Envelope.AggregateId);
         Assert.Equal(0, outbox.Attempts);
         Assert.Null(outbox.PoisonedOnUtc);
+
+        var stored = Deserialize(outbox);
+        Assert.Equal(900, stored.TotalPrice);
+    }
+
+    // The lines are what Ordering builds the order from, so they must be the
+    // stored basket's lines - not whatever the request claimed.
+    [Fact]
+    public async Task Checkout_CarriesTheBasketLines()
+    {
+        var basket = await StoreBasketAsync("mustafa", price: 450, quantity: 2);
+
+        await CheckoutAsync("mustafa");
+
+        await using var verify = fixture.Store.QuerySession();
+        var stored = Deserialize(Assert.Single(await verify.Query<BasketOutboxMessage>().ToListAsync()));
+        var line = Assert.Single(stored.Items);
+        Assert.Equal(basket.Items[0].ProductId, line.ProductId);
+        Assert.Equal("iPhone X", line.ProductName);
+        Assert.Equal(2, line.Quantity);
+        Assert.Equal(450, line.UnitPrice);
+        Assert.Equal("pt_test", stored.Payment.PaymentToken);
+    }
+
+    [Fact]
+    public async Task Checkout_OfAnEmptyBasket_IsRejectedAndKeepsTheBasket()
+    {
+        await using (var session = fixture.Store.LightweightSession())
+        {
+            session.Store(new ShoppingCart("mustafa"));
+            await session.SaveChangesAsync();
+        }
+
+        await Assert.ThrowsAsync<BadRequestException>(() => CheckoutAsync("mustafa"));
+
+        await using var verify = fixture.Store.QuerySession();
+        Assert.NotNull(await verify.LoadAsync<ShoppingCart>("mustafa"));
+        Assert.Empty(await verify.Query<BasketOutboxMessage>().ToListAsync());
     }
 
     [Fact]
@@ -46,7 +88,7 @@ public sealed class CheckoutTransactionTests(PostgresFixture fixture) : IAsyncLi
 
         await Assert.ThrowsAsync<BasketNotFoundException>(() =>
             new BasketRepository(session, TimeProvider.System)
-                .CheckoutBasket(new BasketCheckoutEvent { UserName = "nobody" }));
+                .CheckoutBasket(TestCheckouts.Draft("nobody")));
 
         await using var verify = fixture.Store.QuerySession();
         Assert.Empty(await verify.Query<BasketOutboxMessage>().ToListAsync());
@@ -66,7 +108,7 @@ public sealed class CheckoutTransactionTests(PostgresFixture fixture) : IAsyncLi
 
         await using var session = fixture.Store.LightweightSession();
         var checkoutEvent = await new BasketRepository(session, TimeProvider.System)
-            .CheckoutBasket(new BasketCheckoutEvent { UserName = "mustafa" });
+            .CheckoutBasket(TestCheckouts.Draft("mustafa"));
 
         Assert.Equal(CheckoutId.For("mustafa", version), checkoutEvent.Id);
     }
@@ -116,11 +158,15 @@ public sealed class CheckoutTransactionTests(PostgresFixture fixture) : IAsyncLi
         Assert.Single(await verify.Query<BasketOutboxMessage>().ToListAsync());
     }
 
-    private async Task<BasketCheckoutEvent> CheckoutAsync(string userName)
+    private static BasketCheckoutSubmittedIntegrationEvent Deserialize(BasketOutboxMessage message) =>
+        (BasketCheckoutSubmittedIntegrationEvent)IntegrationEventSerializer.Deserialize(
+            message.Envelope.Payload, typeof(BasketCheckoutSubmittedIntegrationEvent));
+
+    private async Task<BasketCheckoutSubmittedIntegrationEvent> CheckoutAsync(string userName)
     {
         await using var session = fixture.Store.LightweightSession();
         return await new BasketRepository(session, TimeProvider.System)
-            .CheckoutBasket(new BasketCheckoutEvent { UserName = userName });
+            .CheckoutBasket(TestCheckouts.Draft(userName));
     }
 
     private async Task<ShoppingCart> StoreBasketAsync(string userName, decimal price, int quantity)

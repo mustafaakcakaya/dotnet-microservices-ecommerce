@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Basket.V1;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
@@ -92,8 +92,8 @@ public class CachedBasketRepository
     /// stale entry cannot cause a second order either, because checkout reads the
     /// basket from the database, where it no longer exists.
     /// </summary>
-    public async Task<BasketCheckoutEvent> CheckoutBasket(
-        BasketCheckoutEvent draft,
+    public async Task<BasketCheckoutSubmittedIntegrationEvent> CheckoutBasket(
+        BasketCheckoutSubmittedIntegrationEvent draft,
         CancellationToken cancellationToken = default)
     {
         var checkoutEvent = await basketRepository.CheckoutBasket(draft, cancellationToken);

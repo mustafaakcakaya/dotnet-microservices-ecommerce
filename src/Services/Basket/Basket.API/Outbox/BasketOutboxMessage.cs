@@ -14,16 +14,17 @@ namespace Basket.API.Outbox;
 /// refuses to bind a UTC DateTime to - every relay cycle would fail and no
 /// checkout would ever be published.
 ///
-/// The event is stored typed rather than as the envelope Ordering's outbox uses,
-/// because BasketCheckoutEvent is not a versioned contract yet and the shared
-/// type registry needs one. Once it is, this can move to IntegrationEventEnvelope.
+/// The event is kept as the same envelope Ordering's outbox uses: wire name,
+/// schema version and JSON payload. A stored message therefore does not depend on
+/// a CLR type name, and the shared publisher resolves the contract through the
+/// type registry exactly as the CDC worker does.
 /// </remarks>
 public class BasketOutboxMessage
 {
     /// <summary>The checkout event id; also the broker MessageId.</summary>
     public Guid Id { get; set; }
 
-    public BasketCheckoutEvent Message { get; set; } = default!;
+    public IntegrationEventEnvelope Envelope { get; set; } = default!;
 
     public DateTimeOffset OccurredOnUtc { get; set; }
 
@@ -37,10 +38,11 @@ public class BasketOutboxMessage
     /// <summary>Set once the message has failed too often; the relay then leaves it alone.</summary>
     public DateTimeOffset? PoisonedOnUtc { get; set; }
 
-    public static BasketOutboxMessage For(BasketCheckoutEvent checkoutEvent, DateTimeOffset nowUtc) => new()
+    /// <param name="aggregateId">The basket the checkout came from (its user name).</param>
+    public static BasketOutboxMessage For(IntegrationEvent integrationEvent, string aggregateId, DateTimeOffset nowUtc) => new()
     {
-        Id = checkoutEvent.Id,
-        Message = checkoutEvent,
+        Id = integrationEvent.Id,
+        Envelope = IntegrationEventEnvelope.From(integrationEvent, aggregateId),
         OccurredOnUtc = nowUtc,
         NextAttemptOnUtc = nowUtc
     };
