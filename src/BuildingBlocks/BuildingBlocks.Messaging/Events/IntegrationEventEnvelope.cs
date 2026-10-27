@@ -1,3 +1,5 @@
+using BuildingBlocks.Messaging.Serialization;
+
 namespace BuildingBlocks.Messaging.Events;
 
 /// <summary>
@@ -16,4 +18,19 @@ public sealed record IntegrationEventEnvelope(
     string AggregateId,
     string? CorrelationId,
     DateTime OccurredOnUtc,
-    string Payload);
+    string Payload)
+{
+    public static IntegrationEventEnvelope From(IntegrationEvent integrationEvent, string aggregateId)
+    {
+        var contract = IntegrationEventContract.For(integrationEvent.GetType());
+
+        return new IntegrationEventEnvelope(
+            integrationEvent.Id,
+            contract.EventType,
+            contract.SchemaVersion,
+            aggregateId,
+            integrationEvent.CorrelationId,
+            integrationEvent.OccurredOnUtc,
+            IntegrationEventSerializer.Serialize(integrationEvent));
+    }
+}
