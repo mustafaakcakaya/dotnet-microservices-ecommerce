@@ -126,17 +126,6 @@ namespace Ordering.Infrastructure.Data.Migrations
                                 .HasColumnType("nvarchar(5)");
                         });
 
-                    b.ComplexProperty<Dictionary<string, object>>("OrderName", "Ordering.Domain.Models.Order.OrderName#OrderName", b1 =>
-                        {
-                            b1.IsRequired();
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("nvarchar(100)")
-                                .HasColumnName("OrderName");
-                        });
-
                     b.ComplexProperty<Dictionary<string, object>>("Payment", "Ordering.Domain.Models.Order.Payment#Payment", b1 =>
                         {
                             b1.IsRequired();

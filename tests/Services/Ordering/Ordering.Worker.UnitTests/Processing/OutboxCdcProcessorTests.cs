@@ -154,7 +154,7 @@ public sealed class OutboxCdcProcessorTests
     private static IntegrationEventEnvelope Message() => new(
         Guid.NewGuid(),
         "ordering.order-created",
-        SchemaVersion: 1,
+        SchemaVersion: 2,
         AggregateId: Guid.NewGuid().ToString(),
         CorrelationId: null,
         OccurredOnUtc: DateTime.UtcNow,

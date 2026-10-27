@@ -48,7 +48,6 @@ public class BasketCheckoutSubmittedHandler(
         var orderDto = new OrderDto(
             Id: orderId,
             CustomerId: message.CustomerId,
-            OrderName: message.UserName,
             ShippingAddress: ToAddressDto(message.ShippingAddress),
             BillingAddress: ToAddressDto(message.BillingAddress),
             Payment: new PaymentDto(

@@ -8,10 +8,14 @@ public static class OrderExtensions
     public static IEnumerable<OrderDto> ToOrderDtoList(
         this IEnumerable<Order> orders)
     {
-        return orders.Select(order => new OrderDto(
+        return orders.Select(order => order.ToOrderDto());
+    }
+
+    public static OrderDto ToOrderDto(this Order order)
+    {
+        return new OrderDto(
             Id: order.Id.Value,
             CustomerId: order.CustomerId.Value,
-            OrderName: order.OrderName.Value,
             ShippingAddress: new AddressDto(
                 order.ShippingAddress.FirstName,
                 order.ShippingAddress.LastName,
@@ -39,6 +43,6 @@ public static class OrderExtensions
                     orderItem.ProductId.Value,
                     orderItem.Quantity,
                     orderItem.Price))
-                .ToList()));
+                .ToList());
     }
 }

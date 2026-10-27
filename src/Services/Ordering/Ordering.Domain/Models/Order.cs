@@ -6,7 +6,6 @@ public class Order : Aggregate<OrderId>
     public IReadOnlyList<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
     public CustomerId CustomerId { get; private set; } = default!;
-    public OrderName OrderName { get; private set; } = default!;
     public Address ShippingAddress { get; private set; } = default!;
     public Address BillingAddress { get; private set; } = default!;
     public Payment Payment { get; private set; } = default!;
@@ -17,13 +16,12 @@ public class Order : Aggregate<OrderId>
         private set { }
     }
 
-    public static Order Create(OrderId id, CustomerId customerId, OrderName orderName, Address shippingAddress, Address billingAddress, Payment payment)
+    public static Order Create(OrderId id, CustomerId customerId, Address shippingAddress, Address billingAddress, Payment payment)
     {
         var order = new Order
         {
             Id = id,
             CustomerId = customerId,
-            OrderName = orderName,
             ShippingAddress = shippingAddress,
             BillingAddress = billingAddress,
             Payment = payment,
@@ -35,9 +33,8 @@ public class Order : Aggregate<OrderId>
         return order;
     }
 
-    public void Update(OrderName orderName, Address shippingAddress, Address billingAddress, Payment payment, OrderStatus status)
+    public void Update(Address shippingAddress, Address billingAddress, Payment payment, OrderStatus status)
     {
-        OrderName = orderName;
         ShippingAddress = shippingAddress;
         BillingAddress = billingAddress;
         Payment = payment;

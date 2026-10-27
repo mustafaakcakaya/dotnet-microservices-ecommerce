@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.FeatureManagement;
 using BuildingBlocks.Messaging.Events;
-using BuildingBlocks.Messaging.Events.Ordering.V1;
+using BuildingBlocks.Messaging.Events.Ordering.V2;
 using Ordering.Application.Features;
 using Ordering.Application.Orders.IntegrationEvents;
 using Ordering.Infrastructure.Outbox;

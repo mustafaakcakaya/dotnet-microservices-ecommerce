@@ -1,6 +1,6 @@
 using BuildingBlocks.Messaging.Events;
 using BuildingBlocks.Messaging.Events.Basket.V1;
-using BuildingBlocks.Messaging.Events.Ordering.V1;
+using BuildingBlocks.Messaging.Events.Ordering.V2;
 using BuildingBlocks.Messaging.Publishing;
 using BuildingBlocks.Messaging.Serialization;
 using Ordering.Application.Orders.IntegrationEvents;
@@ -32,7 +32,7 @@ public sealed class OutboxRoundTripTests
 
         Assert.Equal(original.Id, outboxMessage.Id);
         Assert.Equal("ordering.order-created", outboxMessage.EventType);
-        Assert.Equal(1, outboxMessage.SchemaVersion);
+        Assert.Equal(2, outboxMessage.SchemaVersion);
         Assert.Equal(order.Id.Value.ToString(), outboxMessage.AggregateId);
         Assert.Equal("corr-42", outboxMessage.CorrelationId);
 
@@ -54,7 +54,6 @@ public sealed class OutboxRoundTripTests
         Assert.Equal(original.Id, roundTripped.Id);
         Assert.Equal(original.OrderId, roundTripped.OrderId);
         Assert.Equal(original.CustomerId, roundTripped.CustomerId);
-        Assert.Equal(original.OrderName, roundTripped.OrderName);
         Assert.Equal(original.Status, roundTripped.Status);
         Assert.Equal(original.TotalPrice, roundTripped.TotalPrice);
         Assert.Equal(original.Items, roundTripped.Items);
@@ -84,8 +83,8 @@ public sealed class OutboxRoundTripTests
     [Fact]
     public void Registry_ResolvesAllOrderingContracts()
     {
-        Assert.Equal(typeof(OrderCreatedIntegrationEvent), _registry.Resolve("ordering.order-created", 1));
-        Assert.Equal(typeof(OrderUpdatedIntegrationEvent), _registry.Resolve("ordering.order-updated", 1));
+        Assert.Equal(typeof(OrderCreatedIntegrationEvent), _registry.Resolve("ordering.order-created", 2));
+        Assert.Equal(typeof(OrderUpdatedIntegrationEvent), _registry.Resolve("ordering.order-updated", 2));
     }
 
     // Basket's outbox stores the same envelope; the relay resolves it through the
@@ -134,7 +133,6 @@ public sealed class OutboxRoundTripTests
         var order = Order.Create(
             OrderId.Of(Guid.NewGuid()),
             CustomerId.Of(Guid.NewGuid()),
-            OrderName.Of("ORD_1"),
             address,
             address,
             payment);

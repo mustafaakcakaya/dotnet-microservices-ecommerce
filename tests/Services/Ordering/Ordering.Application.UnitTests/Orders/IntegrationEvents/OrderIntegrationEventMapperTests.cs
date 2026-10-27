@@ -1,4 +1,4 @@
-using BuildingBlocks.Messaging.Events.Ordering.V1;
+using BuildingBlocks.Messaging.Events.Ordering.V2;
 using BuildingBlocks.Messaging.Serialization;
 using Ordering.Application.Orders.IntegrationEvents;
 using Ordering.Domain.Abstractions;
@@ -25,7 +25,6 @@ public sealed class OrderIntegrationEventMapperTests
         Assert.Equal(order.Id.Value.ToString(), mapped.AggregateId);
         Assert.Equal(order.Id.Value, integrationEvent.OrderId);
         Assert.Equal(order.CustomerId.Value, integrationEvent.CustomerId);
-        Assert.Equal("ORD_1", integrationEvent.OrderName);
         Assert.Equal(nameof(OrderStatus.Pending), integrationEvent.Status);
         Assert.Equal(order.TotalPrice, integrationEvent.TotalPrice);
         Assert.Equal("correlation-1", integrationEvent.CorrelationId);
@@ -89,7 +88,6 @@ public sealed class OrderIntegrationEventMapperTests
         var order = Order.Create(
             OrderId.Of(Guid.NewGuid()),
             CustomerId.Of(Guid.NewGuid()),
-            OrderName.Of("ORD_1"),
             address,
             address,
             payment);

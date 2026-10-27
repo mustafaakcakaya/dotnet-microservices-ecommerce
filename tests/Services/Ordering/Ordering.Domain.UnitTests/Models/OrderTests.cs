@@ -33,7 +33,6 @@ public sealed class OrderTests
         return Order.Create(
             OrderId.Of(Guid.NewGuid()),
             CustomerId.Of(Guid.NewGuid()),
-            OrderName.Of("ORD_1"),
             address,
             address,
             payment);

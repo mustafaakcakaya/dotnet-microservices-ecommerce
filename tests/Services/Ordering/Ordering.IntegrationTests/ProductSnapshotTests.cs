@@ -65,7 +65,6 @@ public sealed class ProductSnapshotTests(SqlServerCdcFixture fixture) : IAsyncLi
         var order = new OrderDto(
             Id: Guid.NewGuid(),
             CustomerId: customerId,
-            OrderName: "ORD_1",
             ShippingAddress: address,
             BillingAddress: address,
             Payment: new PaymentDto(TestOrders.PaymentToken, "4444", 1),

@@ -8,9 +8,9 @@ public interface IOrderingService
         [AliasAs("pageSize")] int? pageSize = 10,
         CancellationToken cancellationToken = default);
 
-    [Get("/ordering-service/orders/{orderName}")]
-    Task<GetOrdersByNameResponse> GetOrdersByName(
-        string orderName,
+    [Get("/ordering-service/orders/{id}")]
+    Task<GetOrderByIdResponse> GetOrderById(
+        Guid id,
         CancellationToken cancellationToken = default);
 
     [Get("/ordering-service/orders/customer/{customerId}")]

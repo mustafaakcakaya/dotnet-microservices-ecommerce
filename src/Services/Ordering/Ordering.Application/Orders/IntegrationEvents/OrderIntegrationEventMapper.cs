@@ -1,5 +1,5 @@
 using BuildingBlocks.Messaging.Events;
-using BuildingBlocks.Messaging.Events.Ordering.V1;
+using BuildingBlocks.Messaging.Events.Ordering.V2;
 using Ordering.Domain.Abstractions;
 using Ordering.Domain.Events;
 using Ordering.Domain.Models;
@@ -28,7 +28,6 @@ public static class OrderIntegrationEventMapper
                     CorrelationId = correlationId,
                     OrderId = created.order.Id.Value,
                     CustomerId = created.order.CustomerId.Value,
-                    OrderName = created.order.OrderName.Value,
                     Status = created.order.Status.ToString(),
                     TotalPrice = created.order.TotalPrice,
                     Items = MapItems(created.order)
@@ -41,7 +40,6 @@ public static class OrderIntegrationEventMapper
                     CorrelationId = correlationId,
                     OrderId = updated.order.Id.Value,
                     CustomerId = updated.order.CustomerId.Value,
-                    OrderName = updated.order.OrderName.Value,
                     Status = updated.order.Status.ToString(),
                     TotalPrice = updated.order.TotalPrice
                 },

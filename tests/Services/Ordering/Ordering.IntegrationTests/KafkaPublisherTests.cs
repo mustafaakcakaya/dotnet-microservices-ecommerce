@@ -53,11 +53,11 @@ public sealed class KafkaPublisherTests : IAsyncLifetime
         var envelope = new IntegrationEventEnvelope(
             Id: Guid.NewGuid(),
             EventType: "ordering.order-created",
-            SchemaVersion: 1,
+            SchemaVersion: 2,
             AggregateId: Guid.NewGuid().ToString(),
             CorrelationId: "corr-7",
             OccurredOnUtc: DateTime.UtcNow,
-            Payload: """{"orderName":"ORD_1","totalPrice":1000}""");
+            Payload: """{"totalPrice":1000}""");
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         await publisher.PublishAsync(envelope, timeout.Token);
@@ -73,7 +73,7 @@ public sealed class KafkaPublisherTests : IAsyncLifetime
             envelope.EventType,
             HeaderValue(consumed.Message.Headers, KafkaIntegrationEventPublisher.EventTypeHeader));
         Assert.Equal(
-            "1",
+            "2",
             HeaderValue(consumed.Message.Headers, KafkaIntegrationEventPublisher.SchemaVersionHeader));
         Assert.Equal(
             "corr-7",

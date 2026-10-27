@@ -50,8 +50,10 @@ consumer's inbox.
 neither EF Core nor the message broker.
 
 **Domain-Driven Design.** `Order` is an aggregate root; value objects such as `OrderId`,
-`Address`, `Payment` and `OrderName` keep identity and validation inside the domain. Business
-rules live in the entities rather than leaking into services. The aggregate records what
+`Address` and `Payment` keep identity and validation inside the domain. An order is
+identified by its `OrderId` alone; it has no separate name (ADR 0005). Business rules live in
+the entities rather than leaking into services. Basket's `ShoppingCart` and Payment's
+`StoredCard` follow the same rule: they change only through their own methods. The aggregate records what
 happened as **domain events**.
 
 **CQRS.** Commands and queries are distinct types (`ICommand`, `IQuery` in
@@ -214,4 +216,5 @@ consumers are idempotent.
 - [ADR 0002 - Single CDC worker instance](docs/adr/0002-cdc-worker-single-instance.md)
 - [ADR 0003 - Checkout published through a transactional outbox](docs/adr/0003-basket-checkout-outbox.md)
 - [ADR 0004 - Versioned checkout contract, real basket lines and payment tokens](docs/adr/0004-checkout-contract-and-payment-tokens.md)
+- [ADR 0005 - Orders are identified by their id, not a name](docs/adr/0005-orders-identified-by-id.md)
 - [Ordering.Worker runbook](src/Services/Ordering/Ordering.Worker/README.md)

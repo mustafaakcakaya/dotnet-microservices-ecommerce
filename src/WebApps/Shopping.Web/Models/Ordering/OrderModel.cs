@@ -3,7 +3,6 @@ namespace Shopping.Web.Models.Ordering;
 public sealed record OrderModel(
     Guid Id,
     Guid CustomerId,
-    string OrderName,
     AddressModel ShippingAddress,
     AddressModel BillingAddress,
     PaymentModel Payment,
@@ -35,5 +34,5 @@ public enum OrderStatus
 }
 
 public sealed record GetOrdersResponse(PaginatedResult<OrderModel> Orders);
-public sealed record GetOrdersByNameResponse(IEnumerable<OrderModel> Orders);
+public sealed record GetOrderByIdResponse(OrderModel Order);
 public sealed record GetOrdersByCustomerResponse(IEnumerable<OrderModel> Orders);

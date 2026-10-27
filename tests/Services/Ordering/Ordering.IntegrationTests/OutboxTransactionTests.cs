@@ -35,7 +35,7 @@ public sealed class OutboxTransactionTests(SqlServerCdcFixture fixture) : IAsync
                 .ToListAsync());
 
         Assert.Equal("ordering.order-created", outboxMessage.EventType);
-        Assert.Equal(1, outboxMessage.SchemaVersion);
+        Assert.Equal(2, outboxMessage.SchemaVersion);
         Assert.NotEqual(Guid.Empty, outboxMessage.Id);
         Assert.DoesNotContain(TestOrders.PaymentToken, outboxMessage.Payload);
 

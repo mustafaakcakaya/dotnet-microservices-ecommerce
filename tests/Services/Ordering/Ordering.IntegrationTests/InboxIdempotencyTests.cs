@@ -1,4 +1,4 @@
-using BuildingBlocks.Messaging.Events.Ordering.V1;
+using BuildingBlocks.Messaging.Events.Ordering.V2;
 using BuildingBlocks.Messaging.Inbox;
 using MassTransit;
 using MassTransit.Testing;
@@ -53,7 +53,6 @@ public sealed class InboxIdempotencyTests(SqlServerCdcFixture fixture) : IAsyncL
             {
                 OrderId = Guid.NewGuid(),
                 CustomerId = Guid.NewGuid(),
-                OrderName = "ORD_1",
                 Status = "Pending",
                 TotalPrice = 1000
             };

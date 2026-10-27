@@ -57,7 +57,6 @@ public class UpdateOrderHandler(IApplicationDbContext dbContext)
             orderDto.Payment.PaymentMethod);
 
         order.Update(
-            orderName: OrderName.Of(orderDto.OrderName),
             shippingAddress: updatedShippingAddress,
             billingAddress: updatedBillingAddress,
             payment: updatedPayment,

@@ -32,7 +32,6 @@ internal static class TestOrders
         var order = Order.Create(
             OrderId.Of(Guid.NewGuid()),
             customerId,
-            OrderName.Of("ORD_1"),
             address,
             address,
             payment);

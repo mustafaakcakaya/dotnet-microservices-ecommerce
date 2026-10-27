@@ -21,7 +21,6 @@ public class BasketCheckoutSubmittedHandlerTests
         var command = Assert.IsType<CreateOrderCommand>(await ConsumeAsync(message));
 
         Assert.Equal(message.CustomerId, command.Order.CustomerId);
-        Assert.Equal(message.UserName, command.Order.OrderName);
         Assert.Equal("Mustafa", command.Order.ShippingAddress.FirstName);
         Assert.Equal("Bahcelievler No:4", command.Order.BillingAddress.AddressLine);
 

@@ -26,15 +26,6 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey(oi => oi.OrderId);
 
         builder.ComplexProperty(
-            o => o.OrderName, nameBuilder =>
-            {
-                nameBuilder.Property(n => n.Value)
-                    .HasColumnName(nameof(Order.OrderName))
-                    .HasMaxLength(100)
-                    .IsRequired();
-            });
-
-        builder.ComplexProperty(
             o => o.ShippingAddress, addressBuilder =>
             {
                 addressBuilder.Property(a => a.FirstName)
