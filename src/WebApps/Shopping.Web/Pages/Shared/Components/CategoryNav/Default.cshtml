@@ -1,0 +1,13 @@
+@model IReadOnlyList<string>
+
+<nav class="nova-categories" aria-label="Kategoriler">
+    <div class="nova-container">
+        <ul>
+            <li><a asp-page="/ProductList">Tüm Ürünler</a></li>
+            @foreach (var category in Model)
+            {
+                <li><a asp-page="/ProductList" asp-route-category="@category">@category</a></li>
+            }
+        </ul>
+    </div>
+</nav>

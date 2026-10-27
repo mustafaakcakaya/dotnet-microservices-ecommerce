@@ -43,7 +43,7 @@ app.UseStaticFiles();
 
 // The container has no locale, so formatting fell back to the invariant culture
 // and prices rendered with the generic currency sign. Pin the storefront's culture.
-const string storefrontCulture = "en-US";
+const string storefrontCulture = "tr-TR";
 app.UseRequestLocalization(options => options
     .SetDefaultCulture(storefrontCulture)
     .AddSupportedCultures(storefrontCulture)

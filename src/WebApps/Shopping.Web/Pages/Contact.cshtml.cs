@@ -4,13 +4,13 @@ namespace Shopping.Web.Pages;
 
 public class ContactModel : PageModel
 {
-    [BindProperty, Required]
+    [BindProperty, Required(ErrorMessage = "Ad Soyad zorunludur.")]
     public string Name { get; set; } = default!;
 
-    [BindProperty, Required, EmailAddress]
+    [BindProperty, Required(ErrorMessage = "E-posta zorunludur."), EmailAddress(ErrorMessage = "Geçerli bir e-posta girin.")]
     public string Email { get; set; } = default!;
 
-    [BindProperty, Required]
+    [BindProperty, Required(ErrorMessage = "Mesaj zorunludur.")]
     public string Message { get; set; } = default!;
 
     public IActionResult OnPost()

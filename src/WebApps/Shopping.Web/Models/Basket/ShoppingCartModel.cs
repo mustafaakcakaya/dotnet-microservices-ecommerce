@@ -6,7 +6,7 @@ public sealed class ShoppingCartModel
     public List<ShoppingCartItemModel> Items { get; set; } = [];
     public decimal TotalPrice => Items.Sum(item => item.Price * item.Quantity);
 
-    public void AddItem(ProductModel product, int quantity = 1, string color = "Black")
+    public void AddItem(ProductModel product, int quantity = 1, string color = "Siyah")
     {
         var existingItem = Items.FirstOrDefault(item =>
             item.ProductId == product.Id &&

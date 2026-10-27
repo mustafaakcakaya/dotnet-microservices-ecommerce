@@ -2,15 +2,15 @@ namespace Shopping.Web.Pages;
 
 public class ConfirmationModel : PageModel
 {
-    public string Message { get; private set; } = "Your request was completed successfully.";
+    public string Message { get; private set; } = "İşleminiz başarıyla tamamlandı.";
 
     public void OnGetOrderSubmitted()
     {
-        Message = "Your order was submitted successfully.";
+        Message = "Siparişiniz alındı.";
     }
 
     public void OnGetContact()
     {
-        Message = "Your message was sent successfully.";
+        Message = "Mesajınız gönderildi.";
     }
 }

@@ -37,7 +37,7 @@ public class OrderDetailModel(
     }
 
     public string ProductName(Guid productId) =>
-        ProductNames.TryGetValue(productId, out var name) ? name : "Product no longer in the catalog";
+        ProductNames.TryGetValue(productId, out var name) ? name : "Katalogdan kaldırılmış ürün";
 
     private async Task<Dictionary<Guid, string>> LoadProductNamesAsync(CancellationToken cancellationToken)
     {

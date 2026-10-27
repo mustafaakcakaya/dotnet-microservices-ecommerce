@@ -1,0 +1,6 @@
+@model ProductModel
+@* The catalog photo, or the brand name on grey when the file is missing. *@
+<img src="~/images/product/@Model.ImageFile"
+     alt="@Model.Name"
+     loading="lazy"
+     onerror="this.replaceWith(Object.assign(document.createElement('span'), { className: 'nova-placeholder', textContent: 'NOVA' }))" />

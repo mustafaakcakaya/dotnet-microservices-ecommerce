@@ -1,49 +1,44 @@
 @page
 @model ContactModel
 @{
-    ViewData["Title"] = "Contact";
+    ViewData["Title"] = "İletişim";
 }
 
-<div class="row g-5 align-items-start">
-    <section class="col-lg-7">
-        <p class="text-success fw-semibold mb-1">Contact</p>
-        <h1>How can we help?</h1>
-        <p class="text-secondary mb-4">Send a message to the storefront team.</p>
-
-        <form method="post" class="card border-0 shadow-sm">
-            <div class="card-body p-4">
+<div class="nova-page">
+    <div class="nova-container">
+        <h1 class="nova-page-title">Bize Sorun</h1>
+        <div class="nova-two-col">
+            <form method="post" class="nova-panel nova-form">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <div class="mb-3">
-                    <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" class="form-control" />
+                    <label asp-for="Name" class="form-label">Ad Soyad</label>
+                    <input asp-for="Name" class="form-control" autocomplete="name" />
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
-                    <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" class="form-control" />
+                    <label asp-for="Email" class="form-label">E-posta</label>
+                    <input asp-for="Email" class="form-control" autocomplete="email" />
                     <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
-                <div class="mb-3">
-                    <label asp-for="Message" class="form-label"></label>
+                <div class="mb-4">
+                    <label asp-for="Message" class="form-label">Mesajınız</label>
                     <textarea asp-for="Message" class="form-control" rows="6"></textarea>
                     <span asp-validation-for="Message" class="text-danger"></span>
                 </div>
-                <button class="btn btn-success" type="submit">Send message</button>
-            </div>
-        </form>
-    </section>
-    <aside class="col-lg-5">
-        <div class="rounded-4 bg-dark text-white p-4 p-lg-5">
-            <h2 class="h4">EShop support</h2>
-            <p class="text-white-50">Questions about products, checkout or an existing order are welcome.</p>
-            <dl class="mb-0">
-                <dt>Email</dt>
-                <dd>support@example.com</dd>
-                <dt>Hours</dt>
-                <dd class="mb-0">Monday–Friday, 09:00–18:00</dd>
-            </dl>
+                <button class="nova-btn" type="submit">Gönder</button>
+            </form>
+            <aside class="nova-panel">
+                <h2 class="nova-panel-title">Müşteri Hizmetleri</h2>
+                <p class="text-secondary">Ürünler, ödeme ya da mevcut bir siparişinizle ilgili sorularınızı bekliyoruz.</p>
+                <dl class="mb-0">
+                    <dt class="fw-medium">E-posta</dt>
+                    <dd>support@example.com</dd>
+                    <dt class="fw-medium">Çalışma Saatleri</dt>
+                    <dd class="mb-0">Pazartesi–Cuma, 09:00–18:00</dd>
+                </dl>
+            </aside>
         </div>
-    </aside>
+    </div>
 </div>
 
 @section Scripts {

@@ -1,59 +1,90 @@
 @page
 @model ProductListModel
 @{
-    ViewData["Title"] = "Products";
+    var title = Model.Category ?? "Tüm Ürünler";
+    ViewData["Title"] = title;
 }
 
-<nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-page="/Index">Home</a></li>
-        <li class="breadcrumb-item active">Products</li>
-    </ol>
-</nav>
-
-<div class="row g-4">
-    <aside class="col-lg-3">
-        <div class="card border-0 shadow-sm sticky-lg-top category-panel">
-            <div class="card-body">
-                <h1 class="h5">Categories</h1>
-                <div class="list-group list-group-flush">
-                    <a asp-page="/ProductList"
-                       class="list-group-item list-group-item-action @(string.IsNullOrWhiteSpace(Model.Category) ? "active" : null)">
-                        All products
-                    </a>
+<div class="nova-listing">
+    <div class="nova-container">
+        <div class="nova-listing-head">
+            <div class="dropdown nova-dropdown">
+                <button class="nova-dropdown-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" /></svg>
+                        Filtrele
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item @(Model.Category is null ? "active" : null)" asp-page="/ProductList" asp-route-sort="@Model.Sort">Tüm Ürünler</a></li>
                     @foreach (var category in Model.Categories)
                     {
-                        <a asp-page="/ProductList"
-                           asp-route-category="@category"
-                           class="list-group-item list-group-item-action @(string.Equals(Model.Category, category, StringComparison.OrdinalIgnoreCase) ? "active" : null)">
-                            @category
-                        </a>
+                        <li>
+                            <a class="dropdown-item @(string.Equals(Model.Category, category, StringComparison.OrdinalIgnoreCase) ? "active" : null)"
+                               asp-page="/ProductList" asp-route-category="@category" asp-route-sort="@Model.Sort">@category</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div class="nova-listing-title">
+                <h1>@title <small>(@Model.Products.Count Ürün)</small></h1>
+                <div class="nova-crumbs">
+                    <a asp-page="/Index">Ana Sayfa</a><span class="sep">/</span>
+                    @if (Model.Category is null)
+                    {
+                        <span>Tüm Ürünler</span>
+                    }
+                    else
+                    {
+                        <a asp-page="/ProductList">Tüm Ürünler</a><span class="sep">/</span><span>@Model.Category</span>
                     }
                 </div>
             </div>
-        </div>
-    </aside>
 
-    <section class="col-lg-9">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h3 mb-0">@(Model.Category ?? "All products")</h2>
-            <span class="text-secondary">@Model.Products.Count item(s)</span>
+            <div class="dropdown nova-dropdown nova-dropdown-right">
+                <button class="nova-dropdown-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 5 6H7zM12 21l-5-6h10z" /></svg>
+                        Sırala
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    @foreach (var option in ProductListModel.SortOptions)
+                    {
+                        <li>
+                            <a class="dropdown-item @(option.Label == Model.SortLabel ? "active" : null)"
+                               asp-page="/ProductList" asp-route-category="@Model.Category"
+                               asp-route-sort="@(option.Value == "" ? null : option.Value)">@option.Label</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="nova-chips">
+            <a class="nova-chip @(Model.Category is null ? "active" : null)" asp-page="/ProductList" asp-route-sort="@Model.Sort">Tümünü Gör</a>
+            @foreach (var category in Model.Categories)
+            {
+                <a class="nova-chip @(string.Equals(Model.Category, category, StringComparison.OrdinalIgnoreCase) ? "active" : null)"
+                   asp-page="/ProductList" asp-route-category="@category" asp-route-sort="@Model.Sort">@category</a>
+            }
         </div>
 
         @if (Model.Products.Count == 0)
         {
-            <div class="alert alert-info">No products match this category.</div>
+            <div class="nova-empty">Bu kategoride ürün bulunmuyor.</div>
         }
         else
         {
-            <div class="row g-4">
+            <div class="nova-grid">
                 @foreach (var product in Model.Products)
                 {
-                    <div class="col-md-6 col-xl-4">
-                        <partial name="_ProductCard" model="product" />
-                    </div>
+                    <partial name="_ProductCard" model="product" />
                 }
             </div>
         }
-    </section>
+    </div>
 </div>

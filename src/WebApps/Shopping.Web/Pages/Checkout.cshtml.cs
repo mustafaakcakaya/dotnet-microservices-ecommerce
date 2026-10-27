@@ -25,7 +25,7 @@ public class CheckoutModel(
 
         if (Cart.Items.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "Your basket is empty.");
+            ModelState.AddModelError(string.Empty, "Sepetiniz boş.");
         }
 
         if (!ModelState.IsValid)
@@ -48,7 +48,7 @@ public class CheckoutModel(
         }
         catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
         {
-            ModelState.AddModelError(string.Empty, "The card details were not accepted. Please check them.");
+            ModelState.AddModelError(string.Empty, "Kart bilgileri kabul edilmedi, lütfen kontrol edin.");
             return Page();
         }
 
@@ -73,7 +73,7 @@ public class CheckoutModel(
 
         if (!response.IsSuccess)
         {
-            ModelState.AddModelError(string.Empty, "Checkout could not be completed.");
+            ModelState.AddModelError(string.Empty, "Siparişiniz tamamlanamadı.");
             return Page();
         }
 

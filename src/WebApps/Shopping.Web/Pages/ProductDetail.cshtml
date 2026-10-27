@@ -1,52 +1,70 @@
 @page
 @model ProductDetailModel
 @{
-    ViewData["Title"] = Model.Product.Name;
+    var product = Model.Product;
+    var category = product.Category.FirstOrDefault();
+    ViewData["Title"] = product.Name;
+    string[] colors = ["Siyah", "Beyaz", "Kırmızı", "Mavi"];
 }
 
-<nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-page="/Index">Home</a></li>
-        <li class="breadcrumb-item"><a asp-page="/ProductList">Products</a></li>
-        <li class="breadcrumb-item active">@Model.Product.Name</li>
-    </ol>
-</nav>
-
-<div class="card border-0 shadow-sm overflow-hidden">
-    <div class="row g-0">
-        <div class="col-lg-6 bg-light p-4 p-lg-5 d-flex align-items-center justify-content-center">
-            <img class="img-fluid product-detail-image"
-                 src="~/images/product/@Model.Product.ImageFile"
-                 onerror="this.onerror=null;this.src='/images/placeholder.png';"
-                 alt="@Model.Product.Name" />
+<div class="nova-detail">
+    <div class="nova-container">
+        <div class="nova-crumbs">
+            <a asp-page="/Index">Ana Sayfa</a><span class="sep">/</span>
+            @if (category is not null)
+            {
+                <a asp-page="/ProductList" asp-route-category="@category">@category</a><span class="sep">/</span>
+            }
+            <span>@product.Name</span>
         </div>
-        <div class="col-lg-6">
-            <div class="card-body p-4 p-lg-5">
-                <p class="text-success fw-semibold text-uppercase">@string.Join(" · ", Model.Product.Category)</p>
-                <h1 class="display-6 fw-bold">@Model.Product.Name</h1>
-                <p class="lead text-secondary">@Model.Product.Description</p>
-                <p class="display-6 fw-semibold my-4">@Model.Product.Price.ToString("C")</p>
 
-                <form method="post" asp-page-handler="AddToCart" class="row g-3">
-                    <input type="hidden" name="productId" value="@Model.Product.Id" />
-                    <div class="col-sm-7">
-                        <label asp-for="Color" class="form-label"></label>
-                        <select asp-for="Color" class="form-select">
-                            <option>Black</option>
-                            <option>White</option>
-                            <option>Red</option>
-                            <option>Blue</option>
-                        </select>
+        <div class="nova-detail-grid">
+            <div class="nova-gallery">
+                <div class="nova-gallery-photo"><partial name="_ProductPhoto" model="product" /></div>
+            </div>
+
+            <div class="nova-buybox">
+                <h1>@product.Name</h1>
+                <p class="nova-subtitle">@product.Description</p>
+                <div class="nova-price">@product.Price.ToTl()</div>
+
+                <form method="post" asp-page-handler="AddToCart">
+                    <input type="hidden" name="productId" value="@product.Id" />
+
+                    <p class="nova-option-label">Renk: <strong data-selected-color>@Model.Color</strong></p>
+                    <div class="nova-options">
+                        @foreach (var color in colors)
+                        {
+                            var id = $"color-{Array.IndexOf(colors, color)}";
+                            <input type="radio" id="@id" name="Color" value="@color" checked="@(color == Model.Color)" />
+                            <label for="@id">@color</label>
+                        }
                     </div>
-                    <div class="col-sm-5">
-                        <label asp-for="Quantity" class="form-label"></label>
-                        <input asp-for="Quantity" class="form-control" min="1" max="100" />
-                    </div>
-                    <div class="col-12">
-                        <button class="btn btn-success btn-lg w-100" type="submit">Add to cart</button>
-                    </div>
+
+                    <p class="nova-option-label">Adet</p>
+                    <input class="nova-qty" type="number" name="Quantity" value="@Model.Quantity" min="1" max="100" aria-label="Adet" />
+
+                    <button class="nova-btn nova-btn-block" type="submit">Sepete Ekle</button>
                 </form>
+
+                <div class="nova-info">
+                    <h2>Ürün Bilgileri</h2>
+                    <p>@product.Description</p>
+                    @if (product.Category.Count > 0)
+                    {
+                        <p class="mt-2">Kategori: @string.Join(", ", product.Category)</p>
+                    }
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Keep "Renk: ..." in step with the chosen swatch.
+        document.querySelectorAll('input[name="Color"]').forEach(input =>
+            input.addEventListener('change', () =>
+                document.querySelector('[data-selected-color]').textContent = input.value));
+    </script>
+}

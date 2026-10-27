@@ -8,11 +8,24 @@ public class IndexModel(
 {
     public IReadOnlyList<ProductModel> Products { get; private set; } = [];
 
+    /// <summary>One tile per catalog category, shown with its first product.</summary>
+    public IReadOnlyList<CategoryTile> Categories { get; private set; } = [];
+
+    public sealed record CategoryTile(string Name, int ProductCount, ProductModel Cover);
+
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Loading storefront home page");
         var response = await catalogService.GetProducts(1, 12, cancellationToken);
         Products = response.Products.ToList();
+
+        Categories = Products
+            .SelectMany(product => product.Category.Select(category => (category, product)))
+            .GroupBy(pair => pair.category, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key)
+            .Select(group => new CategoryTile(group.Key, group.Count(), group.First().product))
+            .Take(3)
+            .ToList();
     }
 
     public async Task<IActionResult> OnPostAddToCartAsync(

@@ -1,36 +1,33 @@
 @page
 @model OrderDetailModel
 @{
-    ViewData["Title"] = "Order";
+    ViewData["Title"] = "Sipariş Detayı";
     var order = Model.Order;
 }
 
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-page="/OrderList">Orders</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Order</li>
-    </ol>
-</nav>
+<div class="nova-page">
+    <div class="nova-container">
+        <div class="nova-crumbs text-center mb-2">
+            <a asp-page="/Index">Ana Sayfa</a><span class="sep">/</span>
+            <a asp-page="/OrderList">Siparişlerim</a><span class="sep">/</span>
+            <span>Sipariş Detayı</span>
+        </div>
+        <h1 class="nova-page-title mb-1">Sipariş Detayı</h1>
+        <p class="text-center font-monospace text-secondary mb-4 text-break">@order.Id</p>
 
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-    <div>
-        <p class="text-success fw-semibold mb-1">Order</p>
-        <h1 class="h3 mb-0 font-monospace text-break">@order.Id</h1>
-    </div>
-    <span class="badge fs-6 @order.Status.BadgeClass()">@order.Status</span>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead class="table-light">
+        <div class="nova-two-col">
+            <section class="nova-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="nova-panel-title mb-0">Ürünler</h2>
+                    <span class="nova-status @order.Status.BadgeClass()">@order.Status.DisplayName()</span>
+                </div>
+                <table class="nova-table">
+                    <thead>
                         <tr>
-                            <th>Product</th>
-                            <th class="text-center">Quantity</th>
-                            <th class="text-end">Price</th>
-                            <th class="text-end">Subtotal</th>
+                            <th>Ürün</th>
+                            <th class="text-center">Adet</th>
+                            <th class="text-end">Birim Fiyat</th>
+                            <th class="text-end">Tutar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -38,44 +35,35 @@
                         {
                             <tr>
                                 <td>
-                                    <a class="fw-semibold" asp-page="/ProductDetail" asp-route-productId="@item.ProductId">
+                                    <a class="nova-line-name" asp-page="/ProductDetail" asp-route-productId="@item.ProductId">
                                         @Model.ProductName(item.ProductId)
                                     </a>
                                 </td>
                                 <td class="text-center">@item.Quantity</td>
-                                <td class="text-end">@item.Price.ToString("C")</td>
-                                <td class="text-end">@((item.Price * item.Quantity).ToString("C"))</td>
+                                <td class="text-end">@item.Price.ToTl()</td>
+                                <td class="text-end">@((item.Price * item.Quantity).ToTl())</td>
                             </tr>
                         }
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="3" class="text-end fw-semibold">Total</td>
-                            <td class="text-end fs-5 fw-bold">@Model.Total.ToString("C")</td>
-                        </tr>
-                    </tfoot>
                 </table>
-            </div>
-        </div>
-    </div>
+                <div class="nova-summary-row nova-summary-total"><span>Toplam</span><span>@Model.Total.ToTl()</span></div>
+            </section>
 
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <h2 class="h6 text-secondary text-uppercase">Shipping address</h2>
-                <address class="mb-0">
-                    <strong>@order.ShippingAddress.FirstName @order.ShippingAddress.LastName</strong><br />
-                    @order.ShippingAddress.AddressLine<br />
-                    @order.ShippingAddress.ZipCode @order.ShippingAddress.State, @order.ShippingAddress.Country<br />
-                    <span class="text-secondary">@order.ShippingAddress.EmailAddress</span>
-                </address>
-            </div>
-        </div>
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h2 class="h6 text-secondary text-uppercase">Payment</h2>
-                <p class="mb-0">Card ending in <span class="font-monospace">@order.Payment.CardLast4</span></p>
-            </div>
+            <aside>
+                <section class="nova-panel">
+                    <h2 class="nova-panel-title">Teslimat Adresi</h2>
+                    <address class="mb-0">
+                        <strong>@order.ShippingAddress.FirstName @order.ShippingAddress.LastName</strong><br />
+                        @order.ShippingAddress.AddressLine<br />
+                        @order.ShippingAddress.ZipCode @order.ShippingAddress.State, @order.ShippingAddress.Country<br />
+                        <span class="text-secondary">@order.ShippingAddress.EmailAddress</span>
+                    </address>
+                </section>
+                <section class="nova-panel">
+                    <h2 class="nova-panel-title">Ödeme</h2>
+                    <p class="mb-0">Kartın son 4 hanesi <span class="font-monospace">@order.Payment.CardLast4</span></p>
+                </section>
+            </aside>
         </div>
     </div>
 </div>

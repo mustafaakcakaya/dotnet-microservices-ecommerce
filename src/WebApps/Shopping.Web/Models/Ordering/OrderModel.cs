@@ -43,6 +43,15 @@ public static class OrderStatusExtensions
         OrderStatus.Cancelled => "bg-danger",
         _ => "bg-secondary"
     };
+
+    public static string DisplayName(this OrderStatus status) => status switch
+    {
+        OrderStatus.Draft => "Taslak",
+        OrderStatus.Pending => "Hazırlanıyor",
+        OrderStatus.Completed => "Tamamlandı",
+        OrderStatus.Cancelled => "İptal Edildi",
+        _ => status.ToString()
+    };
 }
 
 public sealed record GetOrdersResponse(PaginatedResult<OrderModel> Orders);

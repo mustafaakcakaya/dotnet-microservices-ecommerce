@@ -1,69 +1,68 @@
 @page
 @model CartModel
 @{
-    ViewData["Title"] = "Cart";
+    ViewData["Title"] = "Sepetim";
+    var itemCount = Model.Cart.Items.Sum(item => item.Quantity);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <p class="text-success fw-semibold mb-1">Basket</p>
-        <h1 class="mb-0">Your cart</h1>
-    </div>
-    <a class="btn btn-outline-dark" asp-page="/ProductList">Continue shopping</a>
-</div>
+<div class="nova-page">
+    <div class="nova-container">
+        <h1 class="nova-page-title">Sepetim <small>(@itemCount Ürün)</small></h1>
 
-@if (Model.Cart.Items.Count == 0)
-{
-    <div class="empty-state text-center rounded-4 border p-5">
-        <h2 class="h4">Your cart is empty</h2>
-        <p class="text-secondary">Add a product to begin checkout.</p>
-        <a class="btn btn-success" asp-page="/ProductList">Browse products</a>
-    </div>
-}
-else
-{
-    <div class="card border-0 shadow-sm">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Product</th>
-                        <th>Color</th>
-                        <th class="text-center">Quantity</th>
-                        <th class="text-end">Price</th>
-                        <th class="text-end">Subtotal</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
+        @if (Model.Cart.Items.Count == 0)
+        {
+            <div class="nova-empty">
+                <p class="fs-5 mb-1">Sepetinizde ürün bulunmuyor.</p>
+                <p class="text-secondary mb-4">Beğendiğiniz ürünleri sepete ekleyerek alışverişe başlayabilirsiniz.</p>
+                <a class="nova-btn" asp-page="/ProductList">Alışverişe Başla</a>
+            </div>
+        }
+        else
+        {
+            <div class="nova-two-col">
+                <section class="nova-panel">
                     @foreach (var item in Model.Cart.Items)
                     {
-                        <tr>
-                            <td class="fw-semibold">@item.ProductName</td>
-                            <td>@item.Color</td>
-                            <td class="text-center">@item.Quantity</td>
-                            <td class="text-end">@item.Price.ToString("C")</td>
-                            <td class="text-end">@((item.Price * item.Quantity).ToString("C"))</td>
-                            <td class="text-end">
+                        Model.Products.TryGetValue(item.ProductId, out var product);
+                        <div class="nova-line">
+                            <a class="nova-line-photo" asp-page="/ProductDetail" asp-route-productId="@item.ProductId">
+                                @if (product is not null)
+                                {
+                                    <partial name="_ProductPhoto" model="product" />
+                                }
+                                else
+                                {
+                                    <span class="nova-placeholder fs-6">NOVA</span>
+                                }
+                            </a>
+                            <div>
+                                <a class="nova-line-name" asp-page="/ProductDetail" asp-route-productId="@item.ProductId">@item.ProductName</a>
+                                <div class="nova-line-meta">Renk: @item.Color</div>
+                                <div class="nova-line-meta">Adet: @item.Quantity</div>
+                            </div>
+                            <div class="nova-line-end">
+                                <div class="nova-price">@((item.Price * item.Quantity).ToTl())</div>
+                                @if (item.Quantity > 1)
+                                {
+                                    <div class="nova-line-meta">Birim: @item.Price.ToTl()</div>
+                                }
                                 <form method="post" asp-page-handler="RemoveFromCart">
                                     <input type="hidden" name="productId" value="@item.ProductId" />
-                                    <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+                                    <button class="nova-remove" type="submit">Sil</button>
                                 </form>
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     }
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4" class="text-end fw-semibold">Total</td>
-                        <td class="text-end fs-5 fw-bold">@Model.Cart.TotalPrice.ToString("C")</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        <div class="card-body border-top text-end">
-            <a class="btn btn-success btn-lg" asp-page="/Checkout">Proceed to checkout</a>
-        </div>
+                </section>
+
+                <aside class="nova-panel nova-summary">
+                    <h2 class="nova-panel-title">Sipariş Özeti</h2>
+                    <div class="nova-summary-row"><span>Ara Toplam</span><span>@Model.Cart.TotalPrice.ToTl()</span></div>
+                    <div class="nova-summary-row nova-summary-total"><span>Toplam</span><span>@Model.Cart.TotalPrice.ToTl()</span></div>
+                    <a class="nova-btn nova-btn-block" asp-page="/Checkout">Alışverişi Tamamla</a>
+                    <a class="nova-btn nova-btn-outline nova-btn-block mt-2" asp-page="/ProductList">Alışverişe Devam Et</a>
+                </aside>
+            </div>
+        }
     </div>
-}
+</div>

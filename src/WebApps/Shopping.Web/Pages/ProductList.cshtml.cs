@@ -11,6 +11,21 @@ public class ProductListModel(
     [BindProperty(SupportsGet = true)]
     public string? Category { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? Sort { get; set; }
+
+    /// <summary>Sort options by query value; the catalog's own order is the default.</summary>
+    public static readonly IReadOnlyList<(string Value, string Label)> SortOptions =
+    [
+        ("", "Önerilen"),
+        ("price-asc", "En Düşük Fiyat"),
+        ("price-desc", "En Yüksek Fiyat"),
+        ("name", "Ürün Adı (A-Z)")
+    ];
+
+    public string SortLabel =>
+        SortOptions.FirstOrDefault(option => option.Value == (Sort ?? "")).Label ?? "Önerilen";
+
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         var response = await catalogService.GetProducts(1, 50, cancellationToken);
@@ -22,10 +37,18 @@ public class ProductListModel(
             .OrderBy(category => category)
             .ToList();
 
-        Products = string.IsNullOrWhiteSpace(Category)
+        var filtered = string.IsNullOrWhiteSpace(Category)
             ? products
             : products.Where(product =>
                 product.Category.Contains(Category, StringComparer.OrdinalIgnoreCase)).ToList();
+
+        Products = Sort switch
+        {
+            "price-asc" => filtered.OrderBy(product => product.Price).ToList(),
+            "price-desc" => filtered.OrderByDescending(product => product.Price).ToList(),
+            "name" => filtered.OrderBy(product => product.Name, StringComparer.CurrentCultureIgnoreCase).ToList(),
+            _ => filtered
+        };
     }
 
     public async Task<IActionResult> OnPostAddToCartAsync(

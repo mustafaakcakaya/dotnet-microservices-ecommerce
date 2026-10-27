@@ -8,7 +8,7 @@ public class ProductDetailModel(
     public ProductModel Product { get; private set; } = default!;
 
     [BindProperty]
-    public string Color { get; set; } = "Black";
+    public string Color { get; set; } = "Siyah";
 
     [BindProperty]
     public int Quantity { get; set; } = 1;

@@ -1,45 +1,59 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Türkiye'nin Dijital Teknoloji Mağazası";
 }
 
-<section class="hero rounded-4 overflow-hidden mb-5">
-    <div class="row g-0 align-items-center">
-        <div class="col-lg-6 p-4 p-lg-5">
-            <span class="badge bg-success mb-3">Microservices storefront</span>
-            <h1 class="display-5 fw-bold">Products from independent services, in one experience.</h1>
-            <p class="lead text-secondary">Browse the catalog, manage your basket and follow your orders through a single gateway.</p>
-            <a class="btn btn-dark btn-lg" asp-page="/ProductList">Explore products</a>
-        </div>
-        <div class="col-lg-6">
-            <img class="w-100 hero-image" src="~/images/banner/banner1.png" alt="Featured products" />
-        </div>
+<section class="nova-hero">
+    <div class="nova-hero-text">
+        <h1>Yeni<br />Sezon</h1>
+        <p>Akıllı telefonlarda en yeni modeller<br /><strong>şimdi NOVA'da</strong></p>
+        <a asp-page="/ProductList">Alışverişe Başla</a>
+    </div>
+    <div class="nova-hero-media">
+        <img src="~/images/banner/banner1.png" alt="Yeni sezon akıllı telefonlar" />
     </div>
 </section>
 
-<section>
-    <div class="d-flex justify-content-between align-items-end mb-3">
-        <div>
-            <p class="text-success fw-semibold mb-1">Catalog</p>
-            <h2 class="mb-0">Featured products</h2>
-        </div>
-        <a asp-page="/ProductList" class="link-dark">View all</a>
-    </div>
+<div class="nova-container">
+    <section class="nova-section nova-editorial">
+        <figure>
+            <a asp-page="/ProductList"><img src="~/images/banner/banner2.png" alt="Öne çıkan telefonlar" /></a>
+        </figure>
+        <figure>
+            <a asp-page="/ProductList"><img src="~/images/banner/banner3.png" alt="Yeni gelenler" /></a>
+        </figure>
+    </section>
 
-    @if (Model.Products.Count == 0)
+    @if (Model.Categories.Count > 0)
     {
-        <div class="alert alert-info">No products are available yet.</div>
-    }
-    else
-    {
-        <div class="row g-4">
-            @foreach (var product in Model.Products.Take(8))
+        <section class="nova-section nova-tiles" style="--nova-tile-count: @Math.Min(Model.Categories.Count, 3)">
+            @foreach (var tile in Model.Categories)
             {
-                <div class="col-sm-6 col-lg-3">
-                    <partial name="_ProductCard" model="product" />
-                </div>
+                <a class="nova-tile" asp-page="/ProductList" asp-route-category="@tile.Name">
+                    <div class="nova-tile-photo"><partial name="_ProductPhoto" model="tile.Cover" /></div>
+                    <div class="nova-tile-title" lang="en">@tile.Name</div>
+                    <div class="nova-tile-subtitle">@tile.ProductCount Ürün</div>
+                    <span class="nova-link">Keşfet</span>
+                </a>
             }
-        </div>
+        </section>
     }
-</section>
+
+    <section class="nova-section pb-5">
+        <h2 class="nova-section-title">Öne Çıkan Ürünler</h2>
+        @if (Model.Products.Count == 0)
+        {
+            <div class="nova-empty">Henüz ürün bulunmuyor.</div>
+        }
+        else
+        {
+            <div class="nova-grid">
+                @foreach (var product in Model.Products.Take(8))
+                {
+                    <partial name="_ProductCard" model="product" />
+                }
+            </div>
+        }
+    </section>
+</div>
