@@ -33,7 +33,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-  
+
+  paymentdb:
+    image: postgres:18
+    container_name: paymentdb
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=PaymentDb
+    restart: always
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_payment:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d PaymentDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   distributedcache:
     image: redis:8-alpine
     container_name: distributedcache
@@ -196,6 +214,24 @@ services:
       - ${USERSECRETS_PATH:-~/.microsoft/usersecrets}:/home/app/.microsoft/usersecrets:ro
       - ${HTTPS_CERTS_PATH:-~/.aspnet/https}:/https:ro
 
+  # Holds the cards; every other service sees only the token it issues.
+  # Reached through the gateway only, so it serves plain HTTP inside the network.
+  payment.api:
+    container_name: Payment.API
+    image: ${DOCKER_REGISTRY-}paymentapi
+    build:
+      context: .
+      dockerfile: Services/Payment/Payment.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ConnectionStrings__Database=Server=paymentdb;Port=5432;Database=PaymentDb;User Id=postgres;Password=postgres;Include Error Detail=true
+    depends_on:
+      paymentdb:
+        condition: service_healthy
+    ports:
+      - "6007:8080"
+
   ordering.api:
     container_name: Ordering.API
     image: ${DOCKER_REGISTRY-}orderingapi
@@ -266,6 +302,7 @@ services:
       - catalog.api
       - basket.api
       - ordering.api
+      - payment.api
     ports:
       - "6004:8080"
       - "6064:8081"
@@ -298,4 +335,5 @@ services:
 volumes:
   postgres_catalog:
   postgres_basket:
+  postgres_payment:
   redis_data:

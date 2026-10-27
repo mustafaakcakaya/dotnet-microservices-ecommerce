@@ -16,9 +16,9 @@ public class LoggingBehaviour<TRequest, TResponse>
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
         // Only the contract names are logged, never the request itself: commands
-        // such as CreateOrderCommand carry payment details (card number, CVV),
+        // such as Payment's TokenizeCardCommand carry the card number and CVV,
         // and serializing the whole object would write them to the logs in clear
-        // text - undoing the care taken to keep them out of the outbox payload.
+        // text - undoing the care taken to keep them inside the Payment service.
         logger.LogInformation("[START] Handle request={Request} - Response={Response}",
             typeof(TRequest).Name, typeof(TResponse).Name);
 

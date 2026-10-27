@@ -62,6 +62,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.Web", "WebApps\Sho
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Basket.API.IntegrationTests", "..\tests\Services\Basket\Basket.API.IntegrationTests\Basket.API.IntegrationTests.csproj", "{79FC80E3-0048-46DB-A898-92F6037E9B5D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Payment", "Payment", "{9AB6B0EC-612B-4A73-B923-C5F011411E9B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payment.API", "Services\Payment\Payment.API\Payment.API.csproj", "{3A5BA94B-E551-499F-87DA-AD7B6F679C65}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payment.API.UnitTests", "..\tests\Services\Payment\Payment.API.UnitTests\Payment.API.UnitTests.csproj", "{D743DFA1-E797-4818-B333-E7FB02C9C2B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payment.API.IntegrationTests", "..\tests\Services\Payment\Payment.API.IntegrationTests\Payment.API.IntegrationTests.csproj", "{BF4210CF-BA7A-4CE4-926A-94E4C99657F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +93,8 @@ Global
 		{E5D1EC40-B158-400C-8FEB-26E3DCF71628} = {9BB0465F-F19C-4D30-929E-D1828B7A26B6}
 		{A9C371C0-84F9-43D8-A81E-F31A145DA03A} = {2E7111E9-533C-47A2-8713-9E1EB56FD90D}
 		{6CFC80BE-E6C4-4CF1-987E-6C5FC4CE107B} = {0AB38C63-0192-49F6-B393-84EF5ABE8BC1}
+		{9AB6B0EC-612B-4A73-B923-C5F011411E9B} = {8D0C06F8-73E3-4D7E-926C-D6A54D708AF2}
+		{3A5BA94B-E551-499F-87DA-AD7B6F679C65} = {9AB6B0EC-612B-4A73-B923-C5F011411E9B}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{50531623-7C7E-47D0-BDA2-ED1742E21EA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -163,5 +173,17 @@ Global
 		{79FC80E3-0048-46DB-A898-92F6037E9B5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79FC80E3-0048-46DB-A898-92F6037E9B5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79FC80E3-0048-46DB-A898-92F6037E9B5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A5BA94B-E551-499F-87DA-AD7B6F679C65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A5BA94B-E551-499F-87DA-AD7B6F679C65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A5BA94B-E551-499F-87DA-AD7B6F679C65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A5BA94B-E551-499F-87DA-AD7B6F679C65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D743DFA1-E797-4818-B333-E7FB02C9C2B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D743DFA1-E797-4818-B333-E7FB02C9C2B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D743DFA1-E797-4818-B333-E7FB02C9C2B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D743DFA1-E797-4818-B333-E7FB02C9C2B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF4210CF-BA7A-4CE4-926A-94E4C99657F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF4210CF-BA7A-4CE4-926A-94E4C99657F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF4210CF-BA7A-4CE4-926A-94E4C99657F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF4210CF-BA7A-4CE4-926A-94E4C99657F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
