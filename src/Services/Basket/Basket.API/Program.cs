@@ -16,6 +16,7 @@ builder.Services.AddMediatR(config =>
     config.AddOpenBehavior(typeof(ValidationBehaviour<,>));
     config.AddOpenBehavior(typeof(LoggingBehaviour<,>));
 });
+builder.Services.AddValidatorsFromAssembly(assembly);
 
 builder.Services.AddMarten(opts =>
     BasketStoreConfiguration.Configure(opts, builder.Configuration.GetConnectionString("Database")!))

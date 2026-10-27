@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace Payment.API.Cards.TokenizeCard;
 
 public record TokenizeCardCommand(
@@ -47,27 +45,16 @@ public class TokenizeCardCommandHandler(IDocumentSession session, TimeProvider t
 {
     public async Task<TokenizeCardResult> Handle(TokenizeCardCommand command, CancellationToken cancellationToken)
     {
-        var cardNumber = CardRules.Normalize(command.CardNumber);
-
-        var card = new StoredCard
-        {
-            Id = NewToken(),
-            CustomerId = command.CustomerId,
-            CardholderName = command.CardholderName,
-            CardNumber = cardNumber,
-            Expiration = command.Expiration,
-            CardLast4 = cardNumber[^4..],
-            CreatedOnUtc = timeProvider.GetUtcNow()
-        };
+        var card = StoredCard.Issue(
+            command.CustomerId,
+            command.CardholderName,
+            command.CardNumber,
+            command.Expiration,
+            timeProvider.GetUtcNow());
 
         session.Insert(card);
         await session.SaveChangesAsync(cancellationToken);
 
         return new TokenizeCardResult(card.Id, card.CardLast4);
     }
-
-    // Random, not derived from the card: the same card tokenized twice gets two
-    // tokens, and a token cannot be turned back into a card without this database.
-    private static string NewToken() =>
-        "pt_" + Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
 }

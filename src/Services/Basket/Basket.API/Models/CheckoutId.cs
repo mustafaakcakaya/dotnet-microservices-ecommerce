@@ -1,6 +1,6 @@
 using BuildingBlocks.Identifiers;
 
-namespace Basket.API.Data;
+namespace Basket.API.Models;
 
 /// <summary>
 /// Derives a checkout's event id from the user and the exact basket version being

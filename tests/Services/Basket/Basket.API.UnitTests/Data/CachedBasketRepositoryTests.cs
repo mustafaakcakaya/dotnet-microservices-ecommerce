@@ -149,18 +149,10 @@ public sealed class CachedBasketRepositoryTests
         Assert.False(_cache.Contains(UserName));
     }
 
-    private static ShoppingCart BasketWith(string userName, decimal price) => new(userName)
+    private static ShoppingCart BasketWith(string userName, decimal price)
     {
-        Items =
-        [
-            new ShoppingCartItem
-            {
-                ProductId = Guid.NewGuid(),
-                ProductName = "iPhone X",
-                Quantity = 1,
-                Price = price,
-                Color = "black"
-            }
-        ]
-    };
+        var basket = new ShoppingCart(userName);
+        basket.AddItem(Guid.NewGuid(), "iPhone X", "black", 1, price);
+        return basket;
+    }
 }

@@ -46,12 +46,13 @@ internal sealed class FakeBasketRepository : IBasketRepository
 
     public Task<BasketCheckoutSubmittedIntegrationEvent> CheckoutBasket(BasketCheckoutSubmittedIntegrationEvent draft, CancellationToken cancellationToken = default)
     {
-        if (!_baskets.Remove(draft.UserName, out var basket))
+        if (!_baskets.TryGetValue(draft.UserName, out var basket))
         {
             throw new BasketNotFoundException(draft.UserName);
         }
 
-        var checkoutEvent = draft with { TotalPrice = basket.TotalPrice };
+        var checkoutEvent = basket.ToCheckout(draft, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        _baskets.Remove(draft.UserName);
         CheckedOut.Add(checkoutEvent);
         return Task.FromResult(checkoutEvent);
     }

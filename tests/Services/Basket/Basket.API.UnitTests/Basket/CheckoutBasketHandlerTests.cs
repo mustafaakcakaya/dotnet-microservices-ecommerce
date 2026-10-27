@@ -11,10 +11,9 @@ public sealed class CheckoutBasketHandlerTests
     public async Task Handle_PassesTheAddressAndTokenOn()
     {
         var repository = new FakeBasketRepository();
-        repository.Seed(new ShoppingCart("mustafa")
-        {
-            Items = [new ShoppingCartItem { ProductId = Guid.NewGuid(), ProductName = "iPhone X", Quantity = 1, Price = 500 }]
-        });
+        var basket = new ShoppingCart("mustafa");
+        basket.AddItem(Guid.NewGuid(), "iPhone X", "black", 1, 500);
+        repository.Seed(basket);
 
         await new CheckoutBasketCommandHandler(repository)
             .Handle(new CheckoutBasketCommand(ValidDto()), CancellationToken.None);

@@ -9,6 +9,9 @@ public static class PaymentStoreConfiguration
     {
         options.Connection(connectionString);
 
+        // StoredCard keeps its setters private so it can only be created valid.
+        options.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
+
         options.Schema.For<StoredCard>().Identity(x => x.Id);
     }
 }

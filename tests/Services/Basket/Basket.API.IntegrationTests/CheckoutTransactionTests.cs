@@ -74,7 +74,7 @@ public sealed class CheckoutTransactionTests(PostgresFixture fixture) : IAsyncLi
             await session.SaveChangesAsync();
         }
 
-        await Assert.ThrowsAsync<BadRequestException>(() => CheckoutAsync("mustafa"));
+        await Assert.ThrowsAsync<EmptyBasketException>(() => CheckoutAsync("mustafa"));
 
         await using var verify = fixture.Store.QuerySession();
         Assert.NotNull(await verify.LoadAsync<ShoppingCart>("mustafa"));
@@ -171,20 +171,8 @@ public sealed class CheckoutTransactionTests(PostgresFixture fixture) : IAsyncLi
 
     private async Task<ShoppingCart> StoreBasketAsync(string userName, decimal price, int quantity)
     {
-        var basket = new ShoppingCart(userName)
-        {
-            Items =
-            [
-                new ShoppingCartItem
-                {
-                    ProductId = Guid.NewGuid(),
-                    ProductName = "iPhone X",
-                    Quantity = quantity,
-                    Price = price,
-                    Color = "black"
-                }
-            ]
-        };
+        var basket = new ShoppingCart(userName);
+        basket.AddItem(Guid.NewGuid(), "iPhone X", "black", quantity, price);
 
         await using var session = fixture.Store.LightweightSession();
         session.Store(basket);

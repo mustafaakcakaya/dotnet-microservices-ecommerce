@@ -1,6 +1,6 @@
 namespace Basket.API.Basket.GetBasket;
 
-public record GetBasketResponse(ShoppingCart Cart);
+public record GetBasketResponse(ShoppingCartDto Cart);
 
 public class GetBasketEndpoint  : ICarterModule
 {
@@ -10,7 +10,7 @@ public class GetBasketEndpoint  : ICarterModule
         {
             var result = await sender.Send(new GetBasketQuery(userName));
 
-            var response = result.Adapt<GetBasketResponse>();
+            var response = new GetBasketResponse(ShoppingCartDto.From(result.Cart));
 
             return Results.Ok(response);
         })
