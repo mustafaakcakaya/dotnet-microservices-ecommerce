@@ -23,7 +23,7 @@
                         <li class="nav-item"><a class="nav-link" asp-page="/OrderList">Orders</a></li>
                         <li class="nav-item"><a class="nav-link" asp-page="/Contact">Contact</a></li>
                     </ul>
-                    <a class="btn btn-success" asp-page="/Cart">Cart</a>
+                    @await Component.InvokeAsync("CartSummary")
                 </div>
             </div>
         </nav>

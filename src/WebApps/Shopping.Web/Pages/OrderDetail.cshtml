@@ -1,0 +1,81 @@
+@page
+@model OrderDetailModel
+@{
+    ViewData["Title"] = "Order";
+    var order = Model.Order;
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="/OrderList">Orders</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Order</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <p class="text-success fw-semibold mb-1">Order</p>
+        <h1 class="h3 mb-0 font-monospace text-break">@order.Id</h1>
+    </div>
+    <span class="badge fs-6 @order.Status.BadgeClass()">@order.Status</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in order.OrderItems)
+                        {
+                            <tr>
+                                <td>
+                                    <a class="fw-semibold" asp-page="/ProductDetail" asp-route-productId="@item.ProductId">
+                                        @Model.ProductName(item.ProductId)
+                                    </a>
+                                </td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end">@item.Price.ToString("C")</td>
+                                <td class="text-end">@((item.Price * item.Quantity).ToString("C"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end fw-semibold">Total</td>
+                            <td class="text-end fs-5 fw-bold">@Model.Total.ToString("C")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h6 text-secondary text-uppercase">Shipping address</h2>
+                <address class="mb-0">
+                    <strong>@order.ShippingAddress.FirstName @order.ShippingAddress.LastName</strong><br />
+                    @order.ShippingAddress.AddressLine<br />
+                    @order.ShippingAddress.ZipCode @order.ShippingAddress.State, @order.ShippingAddress.Country<br />
+                    <span class="text-secondary">@order.ShippingAddress.EmailAddress</span>
+                </address>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-secondary text-uppercase">Payment</h2>
+                <p class="mb-0">Card ending in <span class="font-monospace">@order.Payment.CardLast4</span></p>
+            </div>
+        </div>
+    </div>
+</div>

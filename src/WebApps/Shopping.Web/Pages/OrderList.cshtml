@@ -36,14 +36,14 @@ else
                     {
                         <tr>
                             <td>
-                                <div class="fw-semibold font-monospace">@order.Id</div>
+                                <a class="fw-semibold font-monospace" asp-page="/OrderDetail" asp-route-id="@order.Id">@order.Id</a>
                             </td>
                             <td>
                                 <div>@order.ShippingAddress.FirstName @order.ShippingAddress.LastName</div>
                                 <small class="text-secondary">@order.ShippingAddress.EmailAddress</small>
                             </td>
                             <td>@order.ShippingAddress.AddressLine, @order.ShippingAddress.State</td>
-                            <td><span class="badge text-bg-secondary">@order.Status</span></td>
+                            <td><span class="badge @order.Status.BadgeClass()">@order.Status</span></td>
                             <td class="text-end fw-semibold">
                                 @order.OrderItems.Sum(item => item.Price * item.Quantity).ToString("C")
                             </td>

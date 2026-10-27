@@ -1,8 +1,11 @@
 using Shopping.Web.Options;
+using Shopping.Web.Routing;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+    options.Conventions.Add(new KebabCasePageRouteConvention()));
+builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
 builder.Services
     .AddOptions<ShopperOptions>()
@@ -37,6 +40,14 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// The container has no locale, so formatting fell back to the invariant culture
+// and prices rendered with the generic currency sign. Pin the storefront's culture.
+const string storefrontCulture = "en-US";
+app.UseRequestLocalization(options => options
+    .SetDefaultCulture(storefrontCulture)
+    .AddSupportedCultures(storefrontCulture)
+    .AddSupportedUICultures(storefrontCulture));
 
 app.UseRouting();
 

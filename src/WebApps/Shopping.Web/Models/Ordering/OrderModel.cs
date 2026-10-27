@@ -33,6 +33,18 @@ public enum OrderStatus
     Cancelled = 4
 }
 
+public static class OrderStatusExtensions
+{
+    /// <summary>Bootstrap 5.1 badge colour for a status.</summary>
+    public static string BadgeClass(this OrderStatus status) => status switch
+    {
+        OrderStatus.Pending => "bg-warning text-dark",
+        OrderStatus.Completed => "bg-success",
+        OrderStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+}
+
 public sealed record GetOrdersResponse(PaginatedResult<OrderModel> Orders);
 public sealed record GetOrderByIdResponse(OrderModel Order);
 public sealed record GetOrdersByCustomerResponse(IEnumerable<OrderModel> Orders);
