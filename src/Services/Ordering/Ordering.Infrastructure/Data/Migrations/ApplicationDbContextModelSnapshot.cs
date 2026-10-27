@@ -141,27 +141,19 @@ namespace Ordering.Infrastructure.Data.Migrations
                         {
                             b1.IsRequired();
 
-                            b1.Property<string>("CVV")
+                            b1.Property<string>("CardLast4")
                                 .IsRequired()
-                                .HasMaxLength(3)
-                                .HasColumnType("nvarchar(3)");
-
-                            b1.Property<string>("CardName")
-                                .HasMaxLength(50)
-                                .HasColumnType("nvarchar(50)");
-
-                            b1.Property<string>("CardNumber")
-                                .IsRequired()
-                                .HasMaxLength(24)
-                                .HasColumnType("nvarchar(24)");
-
-                            b1.Property<string>("Expiration")
-                                .IsRequired()
-                                .HasMaxLength(10)
-                                .HasColumnType("nvarchar(10)");
+                                .HasMaxLength(4)
+                                .HasColumnType("nchar(4)")
+                                .IsFixedLength();
 
                             b1.Property<int>("PaymentMethod")
                                 .HasColumnType("int");
+
+                            b1.Property<string>("PaymentToken")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("nvarchar(64)");
                         });
 
                     b.ComplexProperty<Dictionary<string, object>>("ShippingAddress", "Ordering.Domain.Models.Order.ShippingAddress#Address", b1 =>

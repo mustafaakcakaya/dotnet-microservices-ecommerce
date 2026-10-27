@@ -95,18 +95,14 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.ComplexProperty(
             o => o.Payment, paymentBuilder =>
             {
-                paymentBuilder.Property(p => p.CardName)
-                    .HasMaxLength(50);
-
-                paymentBuilder.Property(p => p.CardNumber)
-                    .HasMaxLength(24)
+                paymentBuilder.Property(p => p.PaymentToken)
+                    .HasMaxLength(64)
                     .IsRequired();
 
-                paymentBuilder.Property(p => p.Expiration)
-                    .HasMaxLength(10);
-
-                paymentBuilder.Property(p => p.CVV)
-                    .HasMaxLength(3);
+                paymentBuilder.Property(p => p.CardLast4)
+                    .HasMaxLength(4)
+                    .IsFixedLength()
+                    .IsRequired();
 
                 paymentBuilder.Property(p => p.PaymentMethod);
             });

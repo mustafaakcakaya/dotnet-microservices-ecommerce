@@ -1,4 +1,5 @@
 using BuildingBlocks.Messaging.Events;
+using BuildingBlocks.Messaging.Events.Basket.V1;
 using BuildingBlocks.Messaging.Events.Ordering.V1;
 using BuildingBlocks.Messaging.Publishing;
 using BuildingBlocks.Messaging.Serialization;
@@ -68,7 +69,7 @@ public sealed class OutboxRoundTripTests
 
         var outboxMessage = OutboxMessage.From(mapped.Event, mapped.AggregateId);
 
-        Assert.DoesNotContain("5555555555554444", outboxMessage.Payload);
+        Assert.DoesNotContain("pt_0123456789abcdef", outboxMessage.Payload);
         Assert.DoesNotContain("cardNumber", outboxMessage.Payload, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("cvv", outboxMessage.Payload, StringComparison.OrdinalIgnoreCase);
     }
@@ -87,11 +88,48 @@ public sealed class OutboxRoundTripTests
         Assert.Equal(typeof(OrderUpdatedIntegrationEvent), _registry.Resolve("ordering.order-updated", 1));
     }
 
+    // Basket's outbox stores the same envelope; the relay resolves it through the
+    // same registry, so the checkout contract must round-trip here as well.
+    [Fact]
+    public void BasketCheckoutEnvelope_RoundTrip_PreservesLinesAndToken()
+    {
+        var address = new CheckoutAddress(
+            "Mustafa", "Akcakaya", "mustafa@example.com", "Test Address", "Turkey", "Istanbul", "34000");
+        var original = new BasketCheckoutSubmittedIntegrationEvent
+        {
+            UserName = "mustafa",
+            CustomerId = Guid.NewGuid(),
+            TotalPrice = 700,
+            Items = [new BasketCheckoutLine(Guid.NewGuid(), "IPhone X", 1, 700)],
+            ShippingAddress = address,
+            BillingAddress = address,
+            Payment = new CheckoutPayment("pt_0123456789abcdef", "4444", 1)
+        };
+
+        var envelope = IntegrationEventEnvelope.From(original, "mustafa");
+
+        Assert.Equal(original.Id, envelope.Id);
+        Assert.Equal("basket.checkout-submitted", envelope.EventType);
+        Assert.Equal(1, envelope.SchemaVersion);
+        Assert.Equal("mustafa", envelope.AggregateId);
+
+        var contractType = _registry.Resolve(envelope.EventType, envelope.SchemaVersion);
+        var roundTripped = Assert.IsType<BasketCheckoutSubmittedIntegrationEvent>(
+            IntegrationEventSerializer.Deserialize(envelope.Payload, contractType));
+
+        Assert.Equal(original.Id, roundTripped.Id);
+        Assert.Equal(original.Items, roundTripped.Items);
+        Assert.Equal(original.Payment, roundTripped.Payment);
+        Assert.Equal(original.ShippingAddress, roundTripped.ShippingAddress);
+        Assert.DoesNotContain("cardNumber", envelope.Payload, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cvv", envelope.Payload, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static Order CreateOrder()
     {
         var address = Address.Of(
             "Mustafa", "Akcakaya", "mustafa@example.com", "Test Address", "Turkey", "Istanbul", "34000");
-        var payment = Payment.Of("Mustafa Akcakaya", "5555555555554444", "12/28", "123", 1);
+        var payment = Payment.Of("pt_0123456789abcdef", "4444", 1);
 
         var order = Order.Create(
             OrderId.Of(Guid.NewGuid()),

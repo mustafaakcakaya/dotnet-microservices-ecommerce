@@ -1,4 +1,5 @@
 using BuildingBlocks.CQRS;
+using Microsoft.EntityFrameworkCore;
 using Ordering.Application.Data;
 using Ordering.Application.Dtos;
 using Ordering.Domain.Models;
@@ -15,10 +16,38 @@ public class CreateOrderHandler(IApplicationDbContext dbContext)
     {
         var order = CreateNewOrder(command.Order);
 
+        await AddUnknownProducts(command.Products, cancellationToken);
         dbContext.Orders.Add(order);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new CreateOrderResult(order.Id.Value);
+    }
+
+    private async Task AddUnknownProducts(
+        IReadOnlyList<ProductSnapshotDto>? products,
+        CancellationToken cancellationToken)
+    {
+        if (products is null || products.Count == 0)
+        {
+            return;
+        }
+
+        var ids = products.Select(product => ProductId.Of(product.ProductId)).Distinct().ToList();
+        var known = await dbContext.Products
+            .Where(product => ids.Contains(product.Id))
+            .Select(product => product.Id)
+            .ToListAsync(cancellationToken);
+
+        // A product already known keeps its stored name and price; the snapshot
+        // only fills a gap, it does not overwrite Ordering's reference data.
+        foreach (var product in products.DistinctBy(product => product.ProductId))
+        {
+            var id = ProductId.Of(product.ProductId);
+            if (!known.Contains(id))
+            {
+                dbContext.Products.Add(Product.Create(id, product.Name, product.Price));
+            }
+        }
     }
 
     private static Order CreateNewOrder(OrderDto orderDto)
@@ -48,10 +77,8 @@ public class CreateOrderHandler(IApplicationDbContext dbContext)
             shippingAddress: shippingAddress,
             billingAddress: billingAddress,
             payment: Payment.Of(
-                orderDto.Payment.CardName,
-                orderDto.Payment.CardNumber,
-                orderDto.Payment.Expiration,
-                orderDto.Payment.Cvv,
+                orderDto.Payment.PaymentToken,
+                orderDto.Payment.CardLast4,
                 orderDto.Payment.PaymentMethod));
 
         foreach (var orderItemDto in orderDto.OrderItems)

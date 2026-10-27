@@ -25,8 +25,9 @@ internal class InitialData
             var address1 = Address.Of("mehmet", "ozkaya", "mehmet@gmail.com", "Bahcelievler No:4", "Turkey", "Istanbul", "38050");
             var address2 = Address.Of("john", "doe", "john@gmail.com", "Broadway No:1", "England", "Nottingham", "08050");
 
-            var payment1 = Payment.Of("mehmet", "5555555555554444", "12/28", "355", 1);
-            var payment2 = Payment.Of("john", "8885555555554444", "06/30", "222", 2);
+            // Sample orders predate the Payment service, so their tokens refer to no card.
+            var payment1 = Payment.Of("seed-token-ord-1", "4444", 1);
+            var payment2 = Payment.Of("seed-token-ord-2", "4444", 2);
 
             var order1 = Order.Create(
                 OrderId.Of(Guid.NewGuid()),

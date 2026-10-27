@@ -52,10 +52,8 @@ public class UpdateOrderHandler(IApplicationDbContext dbContext)
             orderDto.BillingAddress.ZipCode);
 
         var updatedPayment = Payment.Of(
-            orderDto.Payment.CardName,
-            orderDto.Payment.CardNumber,
-            orderDto.Payment.Expiration,
-            orderDto.Payment.Cvv,
+            orderDto.Payment.PaymentToken,
+            orderDto.Payment.CardLast4,
             orderDto.Payment.PaymentMethod);
 
         order.Update(

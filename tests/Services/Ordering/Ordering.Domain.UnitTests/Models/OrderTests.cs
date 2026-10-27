@@ -28,12 +28,7 @@ public sealed class OrderTests
             "Istanbul",
             "34000");
 
-        var payment = Payment.Of(
-            "Mustafa Akcakaya",
-            "5555555555554444",
-            "12/28",
-            "123",
-            1);
+        var payment = Payment.Of("pt_test", "4444", 1);
 
         return Order.Create(
             OrderId.Of(Guid.NewGuid()),

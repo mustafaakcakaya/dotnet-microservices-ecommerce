@@ -1,33 +1,37 @@
 namespace Ordering.Domain.ValueObjects;
 
+/// <summary>
+/// How an order is paid for. The card itself lives in the Payment service;
+/// an order keeps only the token that refers to it and the last four digits
+/// to show the customer which card was used.
+/// </summary>
 public record Payment
 {
-    public string? CardName { get; } = default!;
-    public string CardNumber { get; } = default!;
-    public string Expiration { get; } = default!;
-    public string CVV { get; } = default!;
+    public string PaymentToken { get; } = default!;
+    public string CardLast4 { get; } = default!;
     public int PaymentMethod { get; } = default!;
 
     protected Payment()
     {
     }
 
-    private Payment(string cardName, string cardNumber, string expiration, string cvv, int paymentMethod)
+    private Payment(string paymentToken, string cardLast4, int paymentMethod)
     {
-        CardName = cardName;
-        CardNumber = cardNumber;
-        Expiration = expiration;
-        CVV = cvv;
+        PaymentToken = paymentToken;
+        CardLast4 = cardLast4;
         PaymentMethod = paymentMethod;
     }
 
-    public static Payment Of(string cardName, string cardNumber, string expiration, string cvv, int paymentMethod)
+    public static Payment Of(string paymentToken, string cardLast4, int paymentMethod)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(cardName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(cardNumber);
-        ArgumentException.ThrowIfNullOrWhiteSpace(cvv);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(cvv.Length, 3);
+        ArgumentException.ThrowIfNullOrWhiteSpace(paymentToken);
+        ArgumentException.ThrowIfNullOrWhiteSpace(cardLast4);
 
-        return new Payment(cardName, cardNumber, expiration, cvv, paymentMethod);
+        if (cardLast4.Length != 4 || !cardLast4.All(char.IsAsciiDigit))
+        {
+            throw new ArgumentException("Must be the last four digits of the card.", nameof(cardLast4));
+        }
+
+        return new Payment(paymentToken, cardLast4, paymentMethod);
     }
 }

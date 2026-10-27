@@ -59,7 +59,7 @@ public sealed class CdcPipelineTests(SqlServerCdcFixture fixture) : IAsyncLifeti
         var record = publisher.Published.Single(m => m.Id == outboxId);
         Assert.Equal("ordering.order-created", record.EventType);
         Assert.Equal(order.Id.Value.ToString(), record.AggregateId);
-        Assert.DoesNotContain(TestOrders.CardNumber, record.Payload);
+        Assert.DoesNotContain(TestOrders.PaymentToken, record.Payload);
 
         // 2) Checkpoint advanced after the successful publish...
         var checkpoint = await checkpointStore.GetAsync(CancellationToken.None);

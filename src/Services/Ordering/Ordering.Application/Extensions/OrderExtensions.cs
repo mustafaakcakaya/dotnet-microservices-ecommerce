@@ -29,10 +29,8 @@ public static class OrderExtensions
                 order.BillingAddress.State,
                 order.BillingAddress.ZipCode),
             Payment: new PaymentDto(
-                order.Payment.CardName!,
-                order.Payment.CardNumber,
-                order.Payment.Expiration,
-                order.Payment.CVV,
+                order.Payment.PaymentToken,
+                order.Payment.CardLast4,
                 order.Payment.PaymentMethod),
             Status: order.Status,
             OrderItems: order.OrderItems

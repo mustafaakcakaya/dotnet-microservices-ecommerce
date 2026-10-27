@@ -7,7 +7,7 @@ namespace Ordering.IntegrationTests;
 
 internal static class TestOrders
 {
-    public const string CardNumber = "5555555555554444";
+    public const string PaymentToken = "pt_0123456789abcdef";
 
     public static async Task<(Customer Customer, Product Product)> SeedReferenceDataAsync(
         ApplicationDbContext context)
@@ -27,7 +27,7 @@ internal static class TestOrders
     {
         var address = Address.Of(
             "Mustafa", "Akcakaya", "mustafa@example.com", "Test Address", "Turkey", "Istanbul", "34000");
-        var payment = Payment.Of("Mustafa Akcakaya", CardNumber, "12/28", "123", 1);
+        var payment = Payment.Of(PaymentToken, "4444", 1);
 
         var order = Order.Create(
             OrderId.Of(Guid.NewGuid()),

@@ -11,8 +11,7 @@ namespace Ordering.Application.UnitTests.Orders.IntegrationEvents;
 
 public sealed class OrderIntegrationEventMapperTests
 {
-    private const string CardNumber = "5555555555554444";
-    private const string Cvv = "123";
+    private const string PaymentToken = "pt_0123456789abcdef";
 
     [Fact]
     public void Map_OrderCreatedEvent_MapsToOrderCreatedIntegrationEvent()
@@ -65,7 +64,7 @@ public sealed class OrderIntegrationEventMapperTests
         var mapped = OrderIntegrationEventMapper.Map(new OrderCreatedEvent(order));
 
         var payload = IntegrationEventSerializer.Serialize(mapped!.Event);
-        Assert.DoesNotContain(CardNumber, payload);
+        Assert.DoesNotContain(PaymentToken, payload);
         Assert.DoesNotContain("cardNumber", payload, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("cvv", payload, StringComparison.OrdinalIgnoreCase);
         // Addresses (PII) are not part of the contract either.
@@ -85,7 +84,7 @@ public sealed class OrderIntegrationEventMapperTests
             "Istanbul",
             "34000");
 
-        var payment = Payment.Of("Mustafa Akcakaya", CardNumber, "12/28", Cvv, 1);
+        var payment = Payment.Of(PaymentToken, "4444", 1);
 
         var order = Order.Create(
             OrderId.Of(Guid.NewGuid()),
