@@ -79,7 +79,8 @@ and a relay publishes from that outbox afterwards. The request publishes nothing
 - Publishing is delayed by up to one polling interval (2s by default).
 - Payment details now also sit at rest in BasketDb until the message is published,
   and indefinitely for a poisoned message. This makes taking card data out of
-  `BasketCheckoutEvent` more urgent, not less.
+  `BasketCheckoutEvent` more urgent, not less. *(Resolved by ADR 0004: the event carries
+  a payment token, no card data.)*
 - Every Basket.API instance runs its own relay. That is safe rather than merely
   tolerated - duplicates carry the same MessageId and the inbox keeps one - but two
   instances will do the same work. A claim or advisory lock would fix it if the
@@ -87,6 +88,8 @@ and a relay publishes from that outbox afterwards. The request publishes nothing
 - The outbox stores the event typed rather than in the shared
   `IntegrationEventEnvelope`, because `BasketCheckoutEvent` is not a versioned
   contract yet and the shared type registry requires one. It should move once it is.
+  *(Done in ADR 0004: the outbox stores the envelope and the relay uses the shared
+  publisher.)*
 
 ## Implementation note
 
@@ -101,3 +104,4 @@ PostgreSQL; fakes did not show it.
 
 - ADR 0001 - Delivery guarantees: at-least-once and consumer idempotency
 - ADR 0002 - Single CDC worker instance
+- ADR 0004 - Versioned checkout contract, real basket lines and payment tokens

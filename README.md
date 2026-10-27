@@ -1,6 +1,6 @@
 # dotnet-microservices-ecommerce
 
-A .NET 8 microservices sample that splits an e-commerce domain across four services behind an
+A .NET 8 microservices sample that splits an e-commerce domain across five services behind an
 API gateway, with a Razor Pages storefront in front of it. Each service owns its data and uses
 the persistence technology that fits its problem; services talk to each other both synchronously
 (gRPC) and asynchronously (message broker).
@@ -12,7 +12,8 @@ the persistence technology that fits its problem; services talk to each other bo
 | **Shopping.Web** | Storefront (Razor Pages) | — | Talks only to the gateway, never to a service directly |
 | **YarpApiGateway** | Single entry point | — | YARP reverse proxy, fixed-window rate limiting on ordering |
 | **Catalog.API** | Product catalog | PostgreSQL (Marten, document DB) | Vertical slices, Carter modules |
-| **Basket.API** | Shopping basket | PostgreSQL (Marten) + Redis | Cache-aside decorator, gRPC call to Discount, publishes checkout |
+| **Basket.API** | Shopping basket | PostgreSQL (Marten) + Redis | Cache-aside decorator, gRPC call to Discount, publishes checkout through an outbox |
+| **Payment.API** | Holds cards, issues payment tokens | PostgreSQL (Marten) | The only service that stores a card number |
 | **Discount.Grpc** | Discount coupons | SQLite (EF Core) | gRPC service |
 | **Ordering.API** | Order lifecycle | SQL Server (EF Core) | Clean Architecture + DDD, outbox + CDC, feature flags |
 | **Ordering.Worker** | Publishes outbox messages | — | SQL Server CDC reader, BackgroundService |
@@ -21,10 +22,11 @@ the persistence technology that fits its problem; services talk to each other bo
 
 ```
 Shopping.Web ──► YarpApiGateway ──┬──► Catalog.API
+                                  ├──► Payment.API             (card in, token out)
                                   ├──► Basket.API ──gRPC──► Discount.Grpc
                                   └──► Ordering.API            (rate limited)
 
-Basket.API ──BasketCheckoutEvent──► broker ──► Ordering.API (consumer)
+Basket.API ──outbox──► basket.checkout-submitted v1 ──► broker ──► Ordering.API (consumer)
                                                     │
                                                     ▼ creates the order
                                          outbox row in the same transaction
@@ -32,10 +34,13 @@ Basket.API ──BasketCheckoutEvent──► broker ──► Ordering.API (con
                                           CDC ──► Ordering.Worker ──► broker
 ```
 
-Checkout is asynchronous: Basket publishes a `BasketCheckoutEvent`, Ordering consumes it and
-turns it into a `CreateOrderCommand`. Ordering then publishes its own events back out through the
-outbox, so the two directions use different mechanisms for different reasons - the checkout is a
-fire-and-forget hand-off, while order events must not be lost.
+Checkout is asynchronous. The storefront first sends the card to Payment.API and gets a token
+back, then checks out with that token. Basket deletes the basket and records a
+`BasketCheckoutSubmittedIntegrationEvent` - the basket's lines, the address and the token - in
+one transaction; a relay publishes it ([ADR 0003](docs/adr/0003-basket-checkout-outbox.md)).
+Ordering consumes it and builds the order from those lines. Ordering then publishes its own
+events back out through its CDC outbox. Both directions are at-least-once and deduplicated by the
+consumer's inbox.
 
 ## Architectural approaches
 
@@ -118,12 +123,12 @@ needed for horizontal scaling: [ADR 0002](docs/adr/0002-cdc-worker-single-instan
 so card numbers never reach the outbox, and `LoggingBehaviour` logs contract names rather than
 request contents for the same reason.
 
-**`BasketCheckoutEvent` is the exception and it is a known problem:** it carries `CardNumber`,
-`Expiration` and `CVV` in clear text over the broker, because Ordering needs them to build the
-`Payment` value object. Anything with access to the broker, its queues or its logs can read them.
-Storing card data at rest in `dbo.Orders` has the same issue. This is not acceptable for anything
-handling real cards; the fix is to keep payment details out of the message entirely - a payment
-service holding a token the event refers to.
+The card itself is held by **Payment.API** and nowhere else. The storefront sends it there and
+receives a random token and the last four digits; the checkout event, Basket's outbox and
+`dbo.Orders` carry only those. The CVV is validated and dropped - never stored, logged or
+returned. Payment.API stores card numbers in plain text, which is fine for a sample that never
+sees real cards and not for anything else. Details:
+[ADR 0004](docs/adr/0004-checkout-contract-and-payment-tokens.md).
 
 ## Message broker: RabbitMQ or Kafka
 
@@ -168,11 +173,12 @@ to run inside a transaction.
 | Discount.Grpc | `6002` |
 | Ordering.API | `6003` |
 | Ordering.Worker (health) | `6006` |
+| Payment.API | `6007` |
 | RabbitMQ management UI | `15672` |
 | Kafka | `29092` |
 
 Everything a browser touches goes through the gateway: `/catalog-service/...`,
-`/basket-service/...`, `/ordering-service/...`. The ordering route is rate limited to 5 requests
+`/basket-service/...`, `/ordering-service/...`, `/payment-service/...`. The ordering route is rate limited to 5 requests
 per 10 second window.
 
 ## Tests
@@ -180,6 +186,9 @@ per 10 second window.
 ```bash
 dotnet test tests/BuildingBlocks/BuildingBlocks.UnitTests
 dotnet test tests/Services/Basket/Basket.API.UnitTests
+dotnet test tests/Services/Basket/Basket.API.IntegrationTests   # requires Docker
+dotnet test tests/Services/Payment/Payment.API.UnitTests
+dotnet test tests/Services/Payment/Payment.API.IntegrationTests # requires Docker
 dotnet test tests/Services/Ordering/Ordering.Domain.UnitTests
 dotnet test tests/Services/Ordering/Ordering.Application.UnitTests
 dotnet test tests/Services/Ordering/Ordering.Worker.UnitTests
@@ -204,4 +213,5 @@ consumers are idempotent.
 - [ADR 0001 - Delivery guarantees: at-least-once and consumer idempotency](docs/adr/0001-outbox-cdc-delivery-guarantees.md)
 - [ADR 0002 - Single CDC worker instance](docs/adr/0002-cdc-worker-single-instance.md)
 - [ADR 0003 - Checkout published through a transactional outbox](docs/adr/0003-basket-checkout-outbox.md)
+- [ADR 0004 - Versioned checkout contract, real basket lines and payment tokens](docs/adr/0004-checkout-contract-and-payment-tokens.md)
 - [Ordering.Worker runbook](src/Services/Ordering/Ordering.Worker/README.md)
